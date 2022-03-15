@@ -10,10 +10,13 @@ COMPILER_REQ_FLAGS = -D__GLN__ -DGL3_PROTOTYPES -DGL_GLEXT_PROTOTYPES -DMORPH_FO
 
 REQUIRED_INCLUDES = -I$(MORPHOLOGICA_PATH) -I$(MORPHOLOGICA_PATH)/include -isystem /usr/include/jsoncpp -isystem /usr/include/freetype2 -isystem /usr/include/hdf5/serial 
 
-.PHONY = all clean test
+.PHONY = all debug clean test
 
 all: 
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual testVisual.cpp $(SHARED_LIBS)
+
+debug:
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual -g testVisual.cpp $(SHARED_LIBS)
 
 clean:
 	rm -f testVisual
