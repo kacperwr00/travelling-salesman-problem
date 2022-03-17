@@ -1,4 +1,5 @@
 #include "EuclideanTSPInstance.hpp"
+#include "MatrixTSPInstance.hpp"
 
 namespace util
 {
@@ -8,10 +9,6 @@ namespace util
 
 enum problemType {Euclidean, DistanceMatrix};
 
-
-class DistanceTSPInstance {
-
-};
 
 int main()
 {
@@ -107,7 +104,7 @@ int main()
     // std::cout << ", " << std::endl;
     // instance.printCities();
     instance.visualizeInstance();
-    // instance.deleteInstance();
+    instance.deleteInstance();
 
     return 0;
 }

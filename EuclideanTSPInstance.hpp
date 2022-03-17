@@ -71,9 +71,19 @@ class EuclideanTSPInstance
             std::cout << "Error: Can't Visualize - Instance still hasn't been instantiated" << std::endl; 
         }
 
+        int citiesDistance(std::pair<int, int> first, std::pair<int, int> second)
+        {
+            return round(sqrt((first.first - second.first) * (first.first - second.first) + (first.second - second.second) * (first.second - second.second)));
+        }
+
         int objectiveFunction()
         {
-            return -1;
+            int result = 0;
+            for (long unsigned i = 0; i < solution.size() - 1; i++)
+            {
+                result += citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+            }
+            return result;
         }
 
         void solve(bool withVisualization) 
@@ -156,7 +166,7 @@ class EuclideanTSPInstance
             fclose(file);
         }
 
-        void loadSerialized(char* fileName, bool withSolution)
+        void loadSerialized(const char* fileName, bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::ReadOnly);
             std::string string;
@@ -177,7 +187,7 @@ class EuclideanTSPInstance
             }
         }
 
-        void saveSerialized(char* fileName, bool withSolution)
+        void saveSerialized(const char* fileName, bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::TruncateWrite);
             if (cities)
