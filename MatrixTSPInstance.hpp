@@ -21,11 +21,261 @@ class MatrixTSPInstance
         unsigned cityCount;
         int** cities;
         morph::vVector<unsigned> solution;
+        unsigned max2OptIterations = 1000;
 
     public:
-        void solve(bool withVisualization) 
+        // ALGORYTMY HEURYSTYCZNE:
+        // k-random - losujemy k rozwiązań i bierzemy najlepsze
+
+        // najlepiej w k -random losować tak żeby sensownie przeglądać przestrzeń rozwiązań
+        // np wybrać losową permutację z rozkładem jednostajnym 
+
+        // najbliższy sąsiad z jednego losowego miasta
+        // najbliższy sąsiad n razy - raz z każdego startowego miasta
+        // remis - taka sama odległość do dwóch różnych miast - a) wybieramy dowolny, 
+        // b) wybieramy obydwa i liczymy osobno dla każdego z nich - możemy dostać dużo rozkrzewień i problemy obliczeniowe
+        
+        // 2-opt 
+        // startujemy od gotowego rozwiązania, np w porzadku leksykalnym, lepiej np wynik najbliższego sąsiada, i staramy się je poprawić
+        // rozcinamy dwie krawędzie i sklejamy wierzchołki odwrotnie
+        // 1 2 3 4 5 -> 1 2 5 4 3
+        // sprawdzamy czy zamiana poprawila sprawe
+        // bierzemy wszystkie możliwe pary krawędzi w rozwiązaniu
+        // w euklidesowym, symetrycznym tsp nie trzeba sprawdzać odwracania cyklicznie poza listą,
+        // np nie trzeba w 2 3 4 1 odwracać po 2, 1
+
+        // po sprawdzeniu wszystkich zaczynamy od nowa - tak długo jak coś się w jednej implementacji zmienia
+
+        // przyspieszenie 2 opt - jedna iteracja w O(n^2), a nie O(n^3)
+        // pamiętamy długość starej trasy - odejmujemy długość usuniętych krawędzi,
+        // dodajemy długość dodanych, zamiast liczyć fkcji celu na nowym grafie O(1) zamiast O(n)
+        // problem jak nie jest symetryczny - jeden odcinek musimy przejechać w drugą stronę
+        // wtedy nie trzeba tego robić
+
+        // na 5.5 - zrównoleglenie 2 opt, 3 opt, wybieranie obydwu zremisowanych dla najbliższego sąsiada, 
+
+        unsigned getCityCount()
         {
-            std::cout << "Solving" << std::endl; 
+            return cityCount;
+        }
+
+        void setMax2OptIterations(unsigned iterations)
+        {
+            max2OptIterations = iterations;
+        }
+        
+        void solveKRandom(const unsigned K, const long seed, const bool withVisualization) 
+        {
+            srand(seed);
+            solution.clear();
+            for (unsigned i = 0; i < cityCount; i++)
+            {
+                solution.push_back(i);
+            }
+
+            morph::vVector<unsigned> bestSolution;
+            int bestResult = INT_MAX;
+
+            for (unsigned k = 0; k < K; k++)
+            {
+                //Fisher-Yates shuffle on solution
+                for (unsigned i = cityCount - 1; i > 0; i--)
+                {
+                    int j = rand() % (i + 1);
+                    unsigned tmp = solution[j];
+                    solution[j] = solution[i];
+                    solution[i] = tmp;
+                }
+                int currentResult = objectiveFunction();
+                if (currentResult < bestResult)
+                {
+                    bestResult = currentResult;
+                    bestSolution = solution;
+                }
+            }
+
+            solution = bestSolution;
+            std::cout << "K random result for k = " << K << ":" << bestResult << std::endl;
+        }
+
+        void solveNearestNeighboor(bool withRealtimeVisualization) 
+        {
+            solution.clear();
+            bool* visited = (bool*)calloc(cityCount, sizeof(*visited));
+
+            unsigned currentCity = 0;
+            visited[currentCity] = true;
+            unsigned visitedCount = 1;
+            solution.push_back(currentCity);
+
+            // if (withRealtimeVisualization)
+            // {
+
+            // }
+
+            while (visitedCount != cityCount) 
+            {
+                int currentMinCost = INT_MAX;
+                unsigned currentNearestNeighboor;
+
+                for (unsigned i = 0; i < cityCount; i++)
+                {
+                    if (i == currentCity || visited[i])
+                    {
+                        continue;
+                    }
+                    int dist = cities[i][currentCity];
+                    if (dist < currentMinCost)
+                    {
+                        currentMinCost = dist;
+                        currentNearestNeighboor = i;
+                    }
+                }
+                visitedCount++;
+                visited[currentNearestNeighboor] = true;
+                // std::cout << "Pushing " << currentNearestNeighboor << std::endl; 
+
+                solution.push_back(currentNearestNeighboor);
+                currentCity = currentNearestNeighboor;
+            }
+
+            free(visited);
+            std::cout << "Nearest Neighboor result: " << objectiveFunction() << std::endl;
+        }
+
+        void solveNNearestNeighboor(bool withVisualization) 
+        {
+            morph::vVector<unsigned> bestSolution;
+            int bestResult = INT_MAX;
+            bool* visited = (bool*)malloc(cityCount * sizeof(*visited));
+
+            for (unsigned k = 0; k < cityCount; k++)
+            {
+                solution.clear();
+                
+                for (unsigned i = 0; i < cityCount; i++)
+                {
+                    visited[i] = false;            
+                }
+
+                unsigned currentCity = k;
+                visited[currentCity] = true;
+                unsigned visitedCount = 1;
+                solution.push_back(currentCity);
+
+
+                // if (withRealtimeVisualization)
+                // {
+
+                // }
+
+                while (visitedCount != cityCount) 
+                {
+                    int currentMinCost = INT_MAX;
+                    unsigned currentNearestNeighboor;
+
+                    for (unsigned i = 0; i < cityCount; i++)
+                    {
+                        if (i == currentCity || visited[i])
+                        {
+                            continue;
+                        }
+                        int dist = cities[i][currentCity];
+                        if (dist < currentMinCost)
+                        {
+                            currentMinCost = dist;
+                            currentNearestNeighboor = i;
+                        }
+                    }
+                    visitedCount++;
+                    visited[currentNearestNeighboor] = true;
+                    // std::cout << "Pushing " << currentNearestNeighboor << std::endl; 
+
+                    solution.push_back(currentNearestNeighboor);
+                    currentCity = currentNearestNeighboor;
+                }
+
+                int currentResult = objectiveFunction();
+                if (currentResult < bestResult)
+                {
+                    bestResult = currentResult;
+                    bestSolution = solution;
+                }
+            }
+
+            free(visited);
+            solution = bestSolution;
+            std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
+        }
+
+        void solve2Opt(bool withVisualization) 
+        {
+            // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
+            solveNearestNeighboor(false);
+
+            std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+            unsigned iteration = 0;
+
+            while (changes && ++iteration <= max2OptIterations)
+            {
+                changes = false;
+                for (unsigned i = 1; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < i; j++)
+                    {
+                        //rozerwij i-tą oraz j-tą krawędź
+                        //sklej po odwróceniu jeśli lepiej
+
+                        int costDifference = cities[solution[i]][solution[j]]; 
+                        costDifference += cities[solution[j + 1]][solution[i + 1]];
+                        costDifference -= cities[solution[j]][solution[j + 1]];
+                        costDifference -= cities[solution[i]][solution[i + 1]];
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            for (unsigned m = 1; m < (i - j) / 2; m++)
+                            {
+                                unsigned tmp = solution[j + m];
+                                solution[j + m] = solution[i - (m - 1)];
+                                solution[i - (m - 1)] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                //handle i = cityCount - 1 separately to have less branches / mods
+                unsigned i = cityCount - 1;
+                for (unsigned j = 0; j < i; j++)
+                {
+                    int costDifference = cities[solution[i]][solution[j]]; 
+                    costDifference += cities[solution[j + 1]][solution[0]];
+                    costDifference -= cities[solution[j]][solution[j + 1]];
+                    costDifference -= cities[solution[i]][solution[0]];
+
+                    if (costDifference < 0)
+                    {
+                        changes = true;
+                        for (unsigned m = 1; m < (i - j) / 2; m++)
+                        {
+                            unsigned tmp = solution[j + m];
+                            solution[j + m] = solution[i - (m - 1)];
+                            solution[i - (m - 1)] = tmp;
+                        }
+                    }
+                }
+            }
+
+            std::cout << "After inverts: " << objectiveFunction() << std::endl; 
         }
 
         int objectiveFunction()
@@ -35,6 +285,8 @@ class MatrixTSPInstance
             {
                 result += cities[solution[i]][solution[i + 1]];
             }
+            result += cities[solution[solution.size() - 1]][solution[0]];
+            
             return result;
         }
 
