@@ -99,17 +99,26 @@ int main()
     // }
 
     EuclideanTSPInstance instance;
+    // MatrixTSPInstance instance;
+    
     // instance.randomInstance(4, 0);
+    
+    //Euclidean
     instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/a280.tsp");
+    //FULL_MATRIX
+    // instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/bays29.tsp");
+    //lowerdiagrow
+    // instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/dantzig42.tsp");
+    
     // std::cout << ", " << std::endl;
     // instance.printCities();
-    // instance.visualizeInstance();
+    instance.visualizeInstance();
 
-    instance.setMax2OptIterations(instance.getCityCount() * 5);
-    instance.solve2Opt(true);
-    instance.solveKRandom(1000000, time(NULL), false);
-    // instance.solveNearestNeighboor(false);
-    instance.solveNNearestNeighboor(false);
+    instance.setMax2OptIterations(instance.getCityCount() * instance.getCityCount());
+    // instance.solve2Opt(false);
+    // instance.solveKRandom(1000000, time(NULL));
+    instance.solveNearestNeighboor(false);
+    // instance.solveNNearestNeighboor();
 
     instance.setTargetVisualizationDelay(50);
     instance.visualizeSolution(false);

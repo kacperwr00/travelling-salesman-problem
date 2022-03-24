@@ -22,6 +22,7 @@ class MatrixTSPInstance
         int** cities;
         morph::vVector<unsigned> solution;
         unsigned max2OptIterations = 1000;
+        bool symmetric = false;
 
     public:
         // ALGORYTMY HEURYSTYCZNE:
@@ -59,12 +60,12 @@ class MatrixTSPInstance
             return cityCount;
         }
 
-        void setMax2OptIterations(unsigned iterations)
+        void setMax2OptIterations(const unsigned iterations)
         {
             max2OptIterations = iterations;
         }
         
-        void solveKRandom(const unsigned K, const long seed, const bool withVisualization) 
+        void solveKRandom(const unsigned K, const long seed) 
         {
             srand(seed);
             solution.clear();
@@ -98,7 +99,7 @@ class MatrixTSPInstance
             std::cout << "K random result for k = " << K << ":" << bestResult << std::endl;
         }
 
-        void solveNearestNeighboor(bool withRealtimeVisualization) 
+        void solveNearestNeighboor() 
         {
             solution.clear();
             bool* visited = (bool*)calloc(cityCount, sizeof(*visited));
@@ -107,11 +108,6 @@ class MatrixTSPInstance
             visited[currentCity] = true;
             unsigned visitedCount = 1;
             solution.push_back(currentCity);
-
-            // if (withRealtimeVisualization)
-            // {
-
-            // }
 
             while (visitedCount != cityCount) 
             {
@@ -143,7 +139,7 @@ class MatrixTSPInstance
             std::cout << "Nearest Neighboor result: " << objectiveFunction() << std::endl;
         }
 
-        void solveNNearestNeighboor(bool withVisualization) 
+        void solveNNearestNeighboor() 
         {
             morph::vVector<unsigned> bestSolution;
             int bestResult = INT_MAX;
@@ -208,10 +204,17 @@ class MatrixTSPInstance
             std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt(bool withVisualization) 
+        void solve2Opt() 
+        {
+            if (symmetric)
+                return solve2OptSymmetric();
+            solve2OptNonSymmetric();
+        }
+
+        void solve2OptSymmetric() 
         {
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
-            solveNearestNeighboor(false);
+            solveNNearestNeighboor();
 
             std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
@@ -230,6 +233,7 @@ class MatrixTSPInstance
                 changes = false;
                 for (unsigned i = 1; i < cityCount - 1; i++)
                 {
+                    //bo problem symetryczny
                     for (unsigned j = 0; j < i; j++)
                     {
                         //rozerwij i-tą oraz j-tą krawędź
@@ -275,7 +279,97 @@ class MatrixTSPInstance
                 }
             }
 
-            std::cout << "After inverts: " << objectiveFunction() << std::endl; 
+            std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
+        }
+
+        void solve2OptNonSymmetric() 
+        {
+            solveNNearestNeighboor();
+
+            std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+            unsigned iteration = 0;
+
+            while (changes && ++iteration <= max2OptIterations)
+            {
+                changes = false;
+                for (unsigned i = 0; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < cityCount - 1; j++)
+                    {
+                        if (i == j)
+                            continue;
+
+                        //rozerwij i-tą oraz j-tą krawędź
+                        //sklej po odwróceniu jeśli lepiej
+
+                        int costDifference = cities[solution[i]][solution[j]]; 
+                        costDifference += cities[solution[j + 1]][solution[i + 1]];
+                        costDifference -= cities[solution[j]][solution[j + 1]];
+                        costDifference -= cities[solution[i]][solution[i + 1]];
+
+                        //krawędzie od j + 1 do i - 1 będą iść w drugą stronę:
+                        //(jeśli j większe od i to musimy liczyć modulo cityCount) 
+
+                        if (j > i)
+                        {
+                            for (unsigned k = j + 1; k < cityCount - 1; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                            costDifference -= cities[solution[cityCount]][solution[0]];
+                            costDifference += cities[solution[0]][solution[cityCount]];
+                            for (unsigned k = 0; k < i; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                        }
+                        else
+                        {
+                            for (unsigned k = j + 1; k < i; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                        }
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            if (i > j)
+                            {
+                                for (unsigned m = 1; m < (i - j) / 2; m++)
+                                {
+                                    unsigned tmp = solution[j + m];
+                                    solution[j + m] = solution[i - (m - 1)];
+                                    solution[i - (m - 1)] = tmp;
+                                }
+                            }
+                            else
+                            {
+                                for (unsigned m = 1; m < (j - i) / 2; m++)
+                                {
+                                    unsigned tmp = solution[(j + m) % cityCount];
+                                    solution[(j + m) % cityCount] = solution[(i - (m - 1)) % cityCount];
+                                    solution[(i - (m - 1)) % cityCount] = tmp;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
         }
 
         int objectiveFunction()
@@ -293,8 +387,6 @@ class MatrixTSPInstance
         void loadTSPLIB(const char* fileName) 
         {
             FILE* file = fopen(fileName, "r");
-
-            bool symmetric = false;
 
             if (file == NULL)
             {
@@ -349,31 +441,129 @@ class MatrixTSPInstance
                 {
                     if (cities)
                     {
-                        for (unsigned i = 0; i < cityCount; i++)
+                        if (symmetric)
                         {
-                            if (!fgets(buffer, BUFSIZE, file))
+                            //LOWER_DIAG_ROW
+                            for (unsigned i = 0; i < cityCount; i++)
                             {
-                                std::cout << "Error: Found fewer cities then expected" << std::endl;
-                                return;
-                            }
-                            int tmp = atoi(strtok(buffer, " :"));
-
-                            for (unsigned j = 0; j < cityCount - 1; j++)
-                            {
-                                cities[i][j] = tmp;
-                                if (symmetric)
-                                {
+                                for (unsigned j = 0; j <= i; j++)
+                                {    
+                                    int tmp; 
+                                    fscanf(file, "%d", &tmp);
+                                    cities[i][j] = tmp;
                                     cities[j][i] = tmp;
-                                    if (i == j)
+                                }
+                            }
+                            //     ptr = strtok(buffer, " :");
+                            //     if (!ptr)
+                            //     {
+                            //         if (!fgets(buffer, BUFSIZE, file))
+                            //         {
+                            //             std::cout << "Error: Found fewer cities then expected" << std::endl;
+                            //             return;
+                            //         }
+                            //         ptr = strtok(buffer, " :");
+                            //     }
+                            //     int tmp = atoi(ptr);
+
+                            //     
+
+                            //         ptr = strtok(NULL, " :");
+                            //         if (ptr)
+                            //         {
+                            //             tmp = atoi(ptr);
+                            //         }
+                            //         else
+                            //         {
+                            //             if (!fgets(buffer, BUFSIZE, file))
+                            //             {
+                            //                 std::cout << "Error: Found fewer cities then expected i: " << i << ", j: " << j << ", dimension: " << cityCount << ", tmp: " << tmp << std::endl;
+                            //                 return;
+                            //             }
+                            //             ptr = strtok(buffer, " :");
+                            //             tmp = atoi(ptr);
+                            //         }
+                            //     }
+
+                            //     cities[i][i] = tmp;
+                            // }
+
+                            // if (!fgets(buffer, BUFSIZE, file))
+                            // {
+                            //     std::cout << "Error: Found fewer cities then expected" << std::endl;
+                            //     return;
+                            // }
+
+                            // char* ptr;
+                            // for (unsigned i = 0; i < cityCount; i++)
+                            // {
+                            //     ptr = strtok(buffer, " :");
+                            //     if (!ptr)
+                            //     {
+                            //         if (!fgets(buffer, BUFSIZE, file))
+                            //         {
+                            //             std::cout << "Error: Found fewer cities then expected" << std::endl;
+                            //             return;
+                            //         }
+                            //         ptr = strtok(buffer, " :");
+                            //     }
+                            //     int tmp = atoi(ptr);
+
+                            //     for (unsigned j = 0; j < i; j++)
+                            //     {
+                            //         cities[i][j] = tmp;
+                            //         cities[j][i] = tmp;
+
+                            //         ptr = strtok(NULL, " :");
+                            //         if (ptr)
+                            //         {
+                            //             tmp = atoi(ptr);
+                            //         }
+                            //         else
+                            //         {
+                            //             if (!fgets(buffer, BUFSIZE, file))
+                            //             {
+                            //                 std::cout << "Error: Found fewer cities then expected i: " << i << ", j: " << j << ", dimension: " << cityCount << ", tmp: " << tmp << std::endl;
+                            //                 return;
+                            //             }
+                            //             ptr = strtok(buffer, " :");
+                            //             tmp = atoi(ptr);
+                            //         }
+                            //     }
+
+                            //     cities[i][i] = tmp;
+                            // }
+                        }
+                        else
+                        {
+
+                            for (unsigned i = 0; i < cityCount; i++)
+                            {
+                                if (!fgets(buffer, BUFSIZE, file))
+                                {
+                                    std::cout << "Error: Found fewer cities then expected" << std::endl;
+                                    return;
+                                }
+                                int tmp = atoi(strtok(buffer, " :"));
+
+                                for (unsigned j = 0; j < cityCount - 1; j++)
+                                {
+                                    cities[i][j] = tmp;
+                                    if (symmetric)
                                     {
-                                        break;
+                                        cities[j][i] = tmp;
+                                        if (i == j)
+                                        {
+                                            break;
+                                        }
                                     }
+
+                                    tmp = atoi(strtok(NULL, " :"));
                                 }
 
-                                tmp = atoi(strtok(NULL, " :"));
+                                cities[i][cityCount - 1] = tmp;
                             }
 
-                            cities[i][cityCount - 1] = tmp;
                         }
                         std::cout << "TSPLIB import successful" << std::endl;
                         return;
@@ -388,13 +578,18 @@ class MatrixTSPInstance
             fclose(file);
         }
 
-        void loadSerialized(const char* fileName, bool withSolution)
+        void loadSerialized(const char* fileName, const bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::ReadOnly);
             std::string string;
             data.read_string("/type", string);
             if (string.compare("LOWER_DIAG_ROW") == 0 || string.compare("FULL_MATRIX") == 0)
             {
+                if (string.compare("LOWER_DIAG_ROW") == 0)
+                {
+                    symmetric = true;
+                }
+
                 data.read_val("/cityCount", cityCount);
                 
                 cities = (int**)malloc(sizeof(*cities) * cityCount);
@@ -417,12 +612,16 @@ class MatrixTSPInstance
             }
         }
 
-        void saveSerialized(const char* fileName, bool withSolution)
+        void saveSerialized(const char* fileName, const bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::TruncateWrite);
             if (cities)
             {
-                data.add_string("/type", "FULL_MATRIX");
+                if (!symmetric)
+                    data.add_string("/type", "FULL_MATRIX");
+                else
+                    data.add_string("/type", "LOWER_DIAG_ROW");
+
                 data.add_val("cityCount", cityCount);
                 for (unsigned i = 0; i < cityCount; i++)
                 {
@@ -439,7 +638,7 @@ class MatrixTSPInstance
         }
 
         // Use cityCount = 0 to generate a random amount from 2 to CITY_LIMIT
-        void randomInstance(long seed, unsigned cityCountarg, bool symmetric)
+        void randomInstance(const long seed, unsigned cityCountarg, const bool symmetricArg)
         {
             srand(seed);
             if (cityCountarg == 0)
@@ -462,13 +661,18 @@ class MatrixTSPInstance
                     if (i == j)
                     {
                         cities[i][i] = 0;
-                        if (symmetric)
+                        if (symmetricArg)
                         {
                             break;
                         }
                         continue;
                     }
-                    cities[i][j] = rand() % (cityCount * 3);
+                    int tmp = rand() % (cityCount * 3);
+                    cities[i][j] = tmp;
+                    if (symmetricArg)
+                    {
+                        cities[j][i] = tmp;
+                    }
                 }
             }
         }
@@ -479,7 +683,7 @@ class MatrixTSPInstance
             {
                 for(unsigned j = 0; j < cityCount; j++)
                 {
-                    std::cout << cities[i][j]  << " ";
+                    printf("%4d", cities[i][j]);
                 }
                 std::cout << std::endl;
             }

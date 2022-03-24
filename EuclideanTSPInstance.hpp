@@ -32,12 +32,12 @@ class EuclideanTSPInstance
             return cityCount;
         }
 
-        void setTargetVisualizationDelay(unsigned delay)
+        void setTargetVisualizationDelay(const unsigned delay)
         {
             targetVisualizationDelay = delay;
         }
 
-        void setMax2OptIterations(unsigned iterations)
+        void setMax2OptIterations(const unsigned iterations)
         {
             max2OptIterations = iterations;
         }
@@ -90,7 +90,7 @@ class EuclideanTSPInstance
             std::cout << "Error: Can't Visualize - Instance still hasn't been instantiated" << std::endl; 
         }
 
-        void visualizeSolution(bool repeat)
+        void visualizeSolution(const bool repeat)
         {
             if (solution.size())
             {
@@ -174,7 +174,7 @@ class EuclideanTSPInstance
             }
         }
 
-        int citiesDistance(std::pair<int, int> first, std::pair<int, int> second)
+        int citiesDistance(const std::pair<int, int> first, const std::pair<int, int> second)
         {
             return round(sqrt((first.first - second.first) * (first.first - second.first) + (first.second - second.second) * (first.second - second.second)));
         }
@@ -225,6 +225,31 @@ class EuclideanTSPInstance
         // 3 opt - rozcinamy 3 krawędzie i testujemy wszystkie możliwe naprawienia tej trasy
         // stały czas z akceleracją
 
+
+        // BADANIA TEORETYCZNE:
+        // k-random: O(kn) - jeśli losowanie nie  jest bardziej obciążąjące
+        // najblizszy sasiad: O(n^2) jeśli odległości mamy dostępne w O(1) można obniżyć używając drzew do O(nlogn), a może szybciej
+        // dzielenie obszarów na mniejsze i większe w log liczbie krokow od najmniejszego do większego
+        // 2-opt: O(n^3) w jednej iteracji bez akceleracji, iteracji O(n^2)?
+
+        // trzeba to poszacować, nie trzeba dla równoległych
+
+        // BADANIA EMPIRYCZNE:
+        // sprawozdanie
+        // wyniki do csv - wykresy w exccelu, latexu
+        // błąd - (PI - PI*)/ PI* 0% - opt, 5%, pi* - wartość rozw opt, pi - naszego
+        // testy statystyczne - Wilcoxon sparowany - pairwise
+        // dla k-random - losowego - zrobić średnia (i ją trakrujemy jako wynik), std dev, a super- histogram ale zazwyczaj nie ma na to miejsca - dla każdej instancji
+        // można go tu narysować dla jednej instancji
+
+        // ten sam czas działania, albo liczba wywołań oracle - fkcji celu, albo zliczanie iteracji stop
+
+        // dla wersji równoległej - wykres procesory - czas
+
+        // 2-opt z różnymi startami
+
+        // tabelka - instancje - algorytmy
+
         void solveKRandom(const unsigned K, const long seed, const bool withVisualization) 
         {
             srand(seed);
@@ -259,7 +284,7 @@ class EuclideanTSPInstance
             std::cout << "K random result for k = " << K << ":" << bestResult << std::endl;
         }
 
-        void solveNearestNeighboor(bool withRealtimeVisualization) 
+        void solveNearestNeighboor(const bool withRealtimeVisualization) 
         {
             solution.clear();
             bool* visited = (bool*)calloc(cityCount, sizeof(*visited));
@@ -304,7 +329,7 @@ class EuclideanTSPInstance
             std::cout << "Nearest Neighboor result: " << objectiveFunction() << std::endl;
         }
 
-        void solveNNearestNeighboor(bool withVisualization) 
+        void solveNNearestNeighboor(const bool withVisualization) 
         {
             morph::vVector<unsigned> bestSolution;
             int bestResult = INT_MAX;
@@ -369,10 +394,10 @@ class EuclideanTSPInstance
             std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt(bool withVisualization) 
+        void solve2Opt(const bool withVisualization) 
         {
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
-            solveNearestNeighboor(false);
+            solveNNearestNeighboor(false);
 
             std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
@@ -436,7 +461,7 @@ class EuclideanTSPInstance
                 }
             }
 
-            std::cout << "After inverts: " << objectiveFunction() << std::endl; 
+            std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
         }
 
         void loadTSPLIB(const char* fileName) 
@@ -514,7 +539,7 @@ class EuclideanTSPInstance
             fclose(file);
         }
 
-        void loadSerialized(const char* fileName, bool withSolution)
+        void loadSerialized(const char* fileName, const bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::ReadOnly);
             std::string string;
@@ -535,7 +560,7 @@ class EuclideanTSPInstance
             }
         }
 
-        void saveSerialized(const char* fileName, bool withSolution)
+        void saveSerialized(const char* fileName, const bool withSolution)
         {
             morph::HdfData data(fileName, morph::FileAccess::TruncateWrite);
             if (cities)
@@ -552,7 +577,7 @@ class EuclideanTSPInstance
         }
 
         // Use cityCount = 0 to generate a random amount from 2 to CITY_LIMIT
-        void randomInstance(long seed, unsigned cityCountarg)
+        void randomInstance(const long seed, unsigned cityCountarg)
         {
             srand(seed);
             if (cityCountarg == 0)
@@ -584,5 +609,11 @@ class EuclideanTSPInstance
             {
                 std::cout << cities[i].first << ", " << cities[i].second << std::endl;
             }
+        }
+
+        //TODO: 
+        void cacheCitiesDistance()
+        {
+
         }
 };
