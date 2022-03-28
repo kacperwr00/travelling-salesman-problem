@@ -25,6 +25,7 @@ class EuclideanTSPInstance
         //ms; around 17ms are added to wait for user input
         unsigned targetVisualizationDelay = 300;
         unsigned max2OptIterations = 1000;
+        int** citiesCached;
 
     public:
         unsigned getCityCount()
@@ -175,7 +176,7 @@ class EuclideanTSPInstance
         }
 
         int citiesDistance(const std::pair<int, int> first, const std::pair<int, int> second)
-        {
+        {  
             return round(sqrt((first.first - second.first) * (first.first - second.first) + (first.second - second.second) * (first.second - second.second)));
         }
 
@@ -397,7 +398,7 @@ class EuclideanTSPInstance
         void solve2Opt(const bool withVisualization) 
         {
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
-            solveNNearestNeighboor(false);
+            solveNearestNeighboor(false);
 
             std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
@@ -429,7 +430,7 @@ class EuclideanTSPInstance
                         if (costDifference < 0)
                         {
                             changes = true;
-                            for (unsigned m = 1; m < (i - j) / 2; m++)
+                            for (unsigned m = 1; m < (i - j) / 2 +1; m++)
                             {
                                 unsigned tmp = solution[j + m];
                                 solution[j + m] = solution[i - (m - 1)];
@@ -451,7 +452,7 @@ class EuclideanTSPInstance
                     if (costDifference < 0)
                     {
                         changes = true;
-                        for (unsigned m = 1; m < (i - j) / 2; m++)
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
                         {
                             unsigned tmp = solution[j + m];
                             solution[j + m] = solution[i - (m - 1)];
@@ -601,6 +602,10 @@ class EuclideanTSPInstance
             {
                 free(cities);
             }
+            // if (*citiesCached)
+            // {
+            //     free(citiesCached);
+            // }
         }
 
         void printCities()
@@ -614,6 +619,31 @@ class EuclideanTSPInstance
         //TODO: 
         void cacheCitiesDistance()
         {
+            citiesCached = (int**)malloc(sizeof(*citiesCached) * cityCount);
+            for (unsigned i = 0; i < cityCount; i++)
+            {
+                citiesCached[i] = (int*)malloc(sizeof(**citiesCached) * cityCount);
+            }
 
+            for (unsigned i = 0; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < cityCount; j++)
+                {
+                    // if (i == j)
+                    // {
+                    //     citiesCached[i][i] = 0;
+                    //     if (symmetric)
+                    //     {
+                    //         break;
+                    //     }
+                    //     continue;
+                    // }
+                    int tmp = citiesDistance(cities[i], cities[j]);
+                    citiesCached[i][j] = tmp;
+                    if (i == j)
+                        break;
+                    citiesCached[j][i] = tmp;
+                }
+            }
         }
 };

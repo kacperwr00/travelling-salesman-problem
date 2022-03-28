@@ -247,7 +247,7 @@ class MatrixTSPInstance
                         if (costDifference < 0)
                         {
                             changes = true;
-                            for (unsigned m = 1; m < (i - j) / 2; m++)
+                            for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
                             {
                                 unsigned tmp = solution[j + m];
                                 solution[j + m] = solution[i - (m - 1)];
@@ -269,7 +269,7 @@ class MatrixTSPInstance
                     if (costDifference < 0)
                     {
                         changes = true;
-                        for (unsigned m = 1; m < (i - j) / 2; m++)
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
                         {
                             unsigned tmp = solution[j + m];
                             solution[j + m] = solution[i - (m - 1)];
@@ -348,7 +348,7 @@ class MatrixTSPInstance
                             changes = true;
                             if (i > j)
                             {
-                                for (unsigned m = 1; m < (i - j) / 2; m++)
+                                for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
                                 {
                                     unsigned tmp = solution[j + m];
                                     solution[j + m] = solution[i - (m - 1)];
@@ -357,7 +357,7 @@ class MatrixTSPInstance
                             }
                             else
                             {
-                                for (unsigned m = 1; m < (j - i) / 2; m++)
+                                for (unsigned m = 1; m < (j - i) / 2 + 1; m++)
                                 {
                                     unsigned tmp = solution[(j + m) % cityCount];
                                     solution[(j + m) % cityCount] = solution[(i - (m - 1)) % cityCount];

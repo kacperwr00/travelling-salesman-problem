@@ -115,9 +115,9 @@ int main()
     instance.visualizeInstance();
 
     instance.setMax2OptIterations(instance.getCityCount() * instance.getCityCount());
-    // instance.solve2Opt(false);
+    instance.solve2Opt(false);
     // instance.solveKRandom(1000000, time(NULL));
-    instance.solveNearestNeighboor(false);
+    // instance.solveNearestNeighboor(false);
     // instance.solveNNearestNeighboor();
 
     instance.setTargetVisualizationDelay(50);
