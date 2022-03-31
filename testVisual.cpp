@@ -9,121 +9,129 @@ namespace util
 
 enum problemType {Euclidean, DistanceMatrix};
 
+void algorithmsTest(bool N)
+{
+    if (N)
+    {
+        std::cout << "test results with NNearest Neighboor as time limit: " << std::endl;
+    }
+    else
+    {
+        std::cout << "test results with Nearest Neighboor as time limit: " << std::endl;
+    }
+    
+    EuclideanTSPInstance euclInstance;
+    MatrixTSPInstance matInstance;
+
+    euclInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/a280.tsp");
+    if (N)
+    {
+        euclInstance.testAlgorithmsNForSetInstance("a280.tsp");
+    }
+    else 
+    {
+        euclInstance.testAlgorithmsForSetInstance("a280.tsp");
+    }
+
+    euclInstance.randomInstance(clock(), 50);
+    if (N)
+    {
+        euclInstance.testAlgorithmsNForSetInstance("randomEucl - 50 cities");
+    }
+    else 
+    {
+        euclInstance.testAlgorithmsForSetInstance("randomEucl - 50 cities");
+    }
+
+    euclInstance.randomInstance(clock(), 100);
+    if (N)
+    {
+        euclInstance.testAlgorithmsNForSetInstance("randomEucl - 100 cities");
+    }
+    else 
+    {
+        euclInstance.testAlgorithmsForSetInstance("randomEucl - 100 cities");
+    }
+    
+    euclInstance.randomInstance(clock(), 150);
+    if (N)
+    {
+        euclInstance.testAlgorithmsNForSetInstance("randomEucl - 150 cities");
+    }
+    else 
+    {
+        euclInstance.testAlgorithmsForSetInstance("randomEucl - 150 cities");
+    }
+    
+    euclInstance.randomInstance(clock(), 200);
+    if (N)
+    {
+        euclInstance.testAlgorithmsNForSetInstance("randomEucl - 200 cities");
+    }
+    else 
+    {
+        euclInstance.testAlgorithmsForSetInstance("randomEucl - 200 cities");
+    }
+    
+    //non-symmetric
+    matInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/bays29.tsp");
+    if (N)
+    {
+        matInstance.testAlgorithmsNForSetInstance("bays29.tsp");
+    }
+    else 
+    {
+        matInstance.testAlgorithmsForSetInstance("bays29.tsp");
+    }
+
+    //symmetric
+    matInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/dantzig42.tsp");
+    if (N)
+    {
+        matInstance.testAlgorithmsNForSetInstance("dantzig42.tsp");
+    }
+    else 
+    {
+        matInstance.testAlgorithmsForSetInstance("dantzig42.tsp");
+    }
+
+    matInstance.randomInstance(clock(), 50, true);
+    if (N)
+    {
+        matInstance.testAlgorithmsNForSetInstance("randomMatSym - 50 cities");
+    }
+    else 
+    {
+        matInstance.testAlgorithmsForSetInstance("randomMatSym - 50 cities");
+    }
+
+    matInstance.randomInstance(clock(), 100, false);
+    if (N)
+    {
+        matInstance.testAlgorithmsNForSetInstance("randomMatNonSym - 100 cities");
+    }
+    else 
+    {
+        matInstance.testAlgorithmsForSetInstance("randomMatNonSym - 100 cities");
+    }
+
+    matInstance.randomInstance(clock(), 150, true);
+    if (N)
+    {
+        matInstance.testAlgorithmsNForSetInstance("randomMatSym - 150 cities");
+    }
+    else 
+    {
+        matInstance.testAlgorithmsForSetInstance("randomMatSym - 150 cities");
+    }
+    matInstance.deleteInstance();
+    euclInstance.deleteInstance();
+}
 
 int main()
 {
-    // morph::Visual v(600, 400, "TSP visualized (press \"x\" to exit)");
-    
-    // auto gv = new morph::GraphVisual<double> (v.shaderprog, v.tshaderprog, {-1.6,-1,0});
-
-    // std::vector<std::pair<double, double>> x;
-
-    // morph::vVector<double> xFirsts;
-    // morph::vVector<double> xSeconds;
-
-    // double xMax = 10, yMax = 12;
-
-    // x.push_back(std::make_pair(3.0, 3.5));
-    // x.push_back(std::make_pair(4.0, -3.5));
-    // x.push_back(std::make_pair(5.0, 7.5));
-    // x.push_back(std::make_pair(-5.0, 7.5));
-    // x.push_back(std::make_pair(-7.0, -7.5));
-    // x.push_back(std::make_pair(10.0, 11.5));
-
-    // gv->setsize(3.5, 2.2);
-    // gv->setlimits(-xMax, xMax, -yMax, yMax);
-    // gv->policy = morph::stylepolicy::both; // markers, lines, both, allcolour
-
-    // gv->setdata(xFirsts, xSeconds);
-    // gv->finalize();
-
-    // v.addVisualModel(gv);
-
-    // std::chrono::milliseconds timespan(100);
-
-    // while (!v.readyToFinish) {
-    //     // dx += 0.01;
-    //     gv->clear();
-    //     xFirsts.clear();
-    //     xSeconds.clear();
-
-    //     for (unsigned long i = 0; i < x.size(); i++)
-    //     {
-    //         if (v.readyToFinish)
-    //         {
-    //             break;
-    //         }
-            
-    //         if (i == 33)
-    //         {
-    //             xFirsts.pop_back();
-    //             xSeconds.pop_back();
-    //         }
-    //         else 
-    //         {
-    //             xFirsts.push_back(x[i].first);
-    //             xSeconds.push_back(x[i].second);
-    //         }
-
-    //         gv->update(xFirsts, xSeconds, 0);
-    //         // }
-    //         // gv->append(x[i].first, x[i].second, 0);
-
-            
-
-    //         glfwWaitEventsTimeout (0.01667); // 16.67 ms ~ 60 Hz
-    //         std::this_thread::sleep_for(timespan);
-
-    //         v.render();
-
-    //     }
-    // }
-
-
-    // {
-    //     morph::HdfData data("serializeTest.h5", morph::FileAccess::TruncateWrite);
-    //     data.add_contained_vals ("/x", x);
-    //     // data.add_contained_vals ("/vd2", vd2);
-    // }
-
-    // x.clear();
-
-    // {
-    //     morph::HdfData data("serializeTest.h5", morph::FileAccess::ReadOnly);
-    //     data.read_contained_vals ("/x", x);
-    // }
-
-    // for(auto p: x)
-    // {
-    //     std::cout << p.first << ", " << p.second << std::endl;
-    // }
-
-    EuclideanTSPInstance instance;
-    // MatrixTSPInstance instance;
-    
-    // instance.randomInstance(4, 0);
-    
-    //Euclidean
-    instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/a280.tsp");
-    //FULL_MATRIX
-    // instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/bays29.tsp");
-    //lowerdiagrow
-    // instance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/dantzig42.tsp");
-    
-    // std::cout << ", " << std::endl;
-    // instance.printCities();
-    instance.visualizeInstance();
-
-    instance.setMax2OptIterations(instance.getCityCount() * instance.getCityCount());
-    instance.solve2Opt(false);
-    // instance.solveKRandom(1000000, time(NULL));
-    // instance.solveNearestNeighboor(false);
-    // instance.solveNNearestNeighboor();
-
-    instance.setTargetVisualizationDelay(50);
-    instance.visualizeSolution(false);
-
-    instance.deleteInstance();
+    algorithmsTest(false);
+    algorithmsTest(true);
 
     return 0;
 }

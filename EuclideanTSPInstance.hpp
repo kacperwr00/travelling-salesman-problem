@@ -251,6 +251,147 @@ class EuclideanTSPInstance
 
         // tabelka - instancje - algorytmy
 
+        void timedTestKRandom(const long timeLimit, const long seed)
+        {
+            clock_t startingTimestamp = clock();
+            srand(seed);
+            solution.clear();
+            for (unsigned i = 0; i < cityCount; i++)
+            {
+                solution.push_back(i);
+            }
+
+            morph::vVector<unsigned> bestSolution;
+            int bestResult = INT_MAX;
+
+            long currentTime = 0;
+
+            while (currentTime < timeLimit)
+            {
+                //Fisher-Yates shuffle on solution
+                for (unsigned i = cityCount - 1; i > 0; i--)
+                {
+                    int j = rand() % (i + 1);
+                    unsigned tmp = solution[j];
+                    solution[j] = solution[i];
+                    solution[i] = tmp;
+                }
+                int currentResult = objectiveFunction();
+                if (currentResult < bestResult)
+                {
+                    bestResult = currentResult;
+                    bestSolution = solution;
+                }
+                currentTime = clock() - startingTimestamp;
+            }
+
+            solution = bestSolution;
+        }
+
+        void timedTest2Opt(const long timeLimit)
+        {
+            // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
+            long startTimestamp = clock();
+            solveKRandom(1, clock(), false);
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+
+            while (changes && clock() - startTimestamp < timeLimit)
+            {
+                changes = false;
+                for (unsigned i = 1; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < i; j++)
+                    {
+                        //rozerwij i-tą oraz j-tą krawędź
+                        //sklej po odwróceniu jeśli lepiej
+
+                        int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                        costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
+                        costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                        costDifference -= citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            for (unsigned m = 1; m < (i - j) / 2 +1; m++)
+                            {
+                                unsigned tmp = solution[j + m];
+                                solution[j + m] = solution[i - (m - 1)];
+                                solution[i - (m - 1)] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                //handle i = cityCount - 1 separately to have less branches / mods
+                unsigned i = cityCount - 1;
+                for (unsigned j = 0; j < i; j++)
+                {
+                    int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                    costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
+                    costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                    costDifference -= citiesDistance(cities[solution[i]], cities[solution[0]]);
+
+                    if (costDifference < 0)
+                    {
+                        changes = true;
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                        {
+                            unsigned tmp = solution[j + m];
+                            solution[j + m] = solution[i - (m - 1)];
+                            solution[i - (m - 1)] = tmp;
+                        }
+                    }
+                }
+            }
+        }
+
+        //test KRandom and 2opt with time limit set to execution time of NearestNeighboor
+        void testAlgorithmsForSetInstance(const char* instanceName)
+        {
+            clock_t timeLimit = clock();
+
+            solveNearestNeighboor(false);
+            int nearestNeighboorObjectiveFunction = objectiveFunction();
+
+            timeLimit = clock() - timeLimit;
+            
+            timedTestKRandom(timeLimit, clock());
+            int KRandomObjectiveFunction = objectiveFunction();
+
+            timedTest2Opt(timeLimit);
+            int twoOptObjectiveFunction = objectiveFunction();
+
+            printf("%s, %d, %d, %d\n", instanceName, KRandomObjectiveFunction, nearestNeighboorObjectiveFunction, twoOptObjectiveFunction);
+        }
+
+        //test KRandom and 2opt with time limit set to execution time of NNearestNeighboor
+        void testAlgorithmsNForSetInstance(const char* instanceName)
+        {
+            clock_t timeLimit = clock();
+
+            solveNNearestNeighboor(false);
+            int nNearestNeighboorObjectiveFunction = objectiveFunction();
+
+            timeLimit = clock() - timeLimit;
+            
+            timedTestKRandom(timeLimit, clock());
+            int KRandomObjectiveFunction = objectiveFunction();
+
+            timedTest2Opt(timeLimit);
+            int twoOptObjectiveFunction = objectiveFunction();
+
+            printf("%s, %d, %d, %d\n", instanceName, KRandomObjectiveFunction, nNearestNeighboorObjectiveFunction, twoOptObjectiveFunction);
+        }
+
         void solveKRandom(const unsigned K, const long seed, const bool withVisualization) 
         {
             srand(seed);
@@ -282,7 +423,7 @@ class EuclideanTSPInstance
             }
 
             solution = bestSolution;
-            std::cout << "K random result for k = " << K << ":" << bestResult << std::endl;
+            // std::cout << "K random result for k = " << K << ":" << bestResult << std::endl;
         }
 
         void solveNearestNeighboor(const bool withRealtimeVisualization) 
@@ -327,7 +468,7 @@ class EuclideanTSPInstance
             }
 
             free(visited);
-            std::cout << "Nearest Neighboor result: " << objectiveFunction() << std::endl;
+            // std::cout << "Nearest Neighboor result: " << objectiveFunction() << std::endl;
         }
 
         void solveNNearestNeighboor(const bool withVisualization) 
@@ -392,7 +533,7 @@ class EuclideanTSPInstance
 
             free(visited);
             solution = bestSolution;
-            std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
+            // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
         void solve2Opt(const bool withVisualization) 
@@ -400,7 +541,7 @@ class EuclideanTSPInstance
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
             solveNearestNeighboor(false);
 
-            std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
+            // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
             int currentCost = objectiveFunction();
 
@@ -462,7 +603,7 @@ class EuclideanTSPInstance
                 }
             }
 
-            std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
+            // std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
         }
 
         void loadTSPLIB(const char* fileName) 
@@ -527,7 +668,7 @@ class EuclideanTSPInstance
 
                             cities[i] = std::make_pair<int, int>(atoi(tmp1), atoi(tmp2));
                         }
-                        std::cout << "TSPLIB import successful" << std::endl;
+                        // std::cout << "TSPLIB import successful" << std::endl;
                         return;
                     }
                     else 
