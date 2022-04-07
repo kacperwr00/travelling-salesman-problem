@@ -23,7 +23,7 @@ void algorithmsTest(bool N)
     EuclideanTSPInstance euclInstance;
     MatrixTSPInstance matInstance;
 
-    euclInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/a280.tsp");
+    euclInstance.loadTSPLIB("../ALL_tsp/a280.tsp");
     if (N)
     {
         euclInstance.testAlgorithmsNForSetInstance("a280.tsp");
@@ -74,7 +74,7 @@ void algorithmsTest(bool N)
     }
     
     //non-symmetric
-    matInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/bays29.tsp");
+    matInstance.loadTSPLIB("../ALL_tsp/bays29.tsp");
     if (N)
     {
         matInstance.testAlgorithmsNForSetInstance("bays29.tsp");
@@ -85,7 +85,7 @@ void algorithmsTest(bool N)
     }
 
     //symmetric
-    matInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/dantzig42.tsp");
+    matInstance.loadTSPLIB("../ALL_tsp/dantzig42.tsp");
     if (N)
     {
         matInstance.testAlgorithmsNForSetInstance("dantzig42.tsp");
