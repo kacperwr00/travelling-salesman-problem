@@ -354,6 +354,73 @@ class EuclideanTSPInstance
             }
         }
 
+        void timedTestNNearestNeighboor(const long timeLimit)
+        {
+            long startTimestamp = clock();
+
+            morph::vVector<unsigned> bestSolution;
+            int bestResult = INT_MAX;
+            bool* visited = (bool*)malloc(cityCount * sizeof(*visited));
+
+            for (unsigned k = 0; k < cityCount && clock() - startTimestamp < timeLimit; k++)
+            {
+                solution.clear();
+                
+                for (unsigned i = 0; i < cityCount; i++)
+                {
+                    visited[i] = false;            
+                }
+
+                unsigned currentCity = k;
+                visited[currentCity] = true;
+                unsigned visitedCount = 1;
+                solution.push_back(currentCity);
+
+
+                // if (withRealtimeVisualization)
+                // {
+
+                // }
+
+                while (visitedCount != cityCount) 
+                {
+                    int currentMinCost = INT_MAX;
+                    unsigned currentNearestNeighboor;
+
+                    for (unsigned i = 0; i < cityCount; i++)
+                    {
+                        if (i == currentCity || visited[i])
+                        {
+                            continue;
+                        }
+                        int dist = citiesDistance(cities[i], cities[currentCity]);
+                        if (dist < currentMinCost)
+                        {
+                            currentMinCost = dist;
+                            currentNearestNeighboor = i;
+                        }
+                    }
+                    visitedCount++;
+                    visited[currentNearestNeighboor] = true;
+                    // std::cout << "Pushing " << currentNearestNeighboor << std::endl; 
+
+                    solution.push_back(currentNearestNeighboor);
+                    currentCity = currentNearestNeighboor;
+                }
+
+                int currentResult = objectiveFunction();
+                if (currentResult < bestResult)
+                {
+                    bestResult = currentResult;
+                    bestSolution = solution;
+                }
+            }
+
+            free(visited);
+            solution = bestSolution;
+            // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
+        }
+
         //test KRandom and 2opt with time limit set to execution time of NearestNeighboor
         void testAlgorithmsForSetInstance(const char* instanceName)
         {
@@ -371,6 +438,91 @@ class EuclideanTSPInstance
             int twoOptObjectiveFunction = objectiveFunction();
 
             printf("%s, %d, %d, %d\n", instanceName, KRandomObjectiveFunction, nearestNeighboorObjectiveFunction, twoOptObjectiveFunction);
+        }
+
+        void variant2Opt(uint8_t variant)
+        {
+            if (variant == 0)
+            {
+                solveKRandom(1, 123, false);
+            }
+            else if (variant == 1)
+            {
+                solveKRandom(100, 123, false);
+            }
+            else if (variant == 2)
+            {
+                solveKRandom(10000, 123, false);
+            }
+            else if (variant == 3)
+            {
+                solveNearestNeighboor(false);
+            }
+            else if (variant == 4)
+            {
+                solveNNearestNeighboor(false);
+            }
+
+            // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+
+            while (changes)
+            {
+                changes = false;
+                for (unsigned i = 1; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < i; j++)
+                    {
+                        //rozerwij i-tą oraz j-tą krawędź
+                        //sklej po odwróceniu jeśli lepiej
+
+                        int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                        costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
+                        costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                        costDifference -= citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            for (unsigned m = 1; m < (i - j) / 2 +1; m++)
+                            {
+                                unsigned tmp = solution[j + m];
+                                solution[j + m] = solution[i - (m - 1)];
+                                solution[i - (m - 1)] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                //handle i = cityCount - 1 separately to have less branches / mods
+                unsigned i = cityCount - 1;
+                for (unsigned j = 0; j < i; j++)
+                {
+                    int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                    costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
+                    costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                    costDifference -= citiesDistance(cities[solution[i]], cities[solution[0]]);
+
+                    if (costDifference < 0)
+                    {
+                        changes = true;
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                        {
+                            unsigned tmp = solution[j + m];
+                            solution[j + m] = solution[i - (m - 1)];
+                            solution[i - (m - 1)] = tmp;
+                        }
+                    }
+                }
+            }
         }
 
         //test KRandom and 2opt with time limit set to execution time of NNearestNeighboor
