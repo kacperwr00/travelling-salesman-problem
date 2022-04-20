@@ -14,10 +14,11 @@ int main()
 {
     EuclideanTSPInstance eucInstance;
     MatrixTSPInstance matInstance;
-    // instance.randomInstance(4, 0);
-    eucInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/a280.tsp");
+    eucInstance.randomInstance(4, 0);
+//    eucInstance.loadTSPLIB("../ALL_tsp/a280.tsp");
     eucInstance.printCities();
-    matInstance.loadTSPLIB("/home/kacper/semestr6/metaheurystyczne/ALL_tsp/bays29.tsp");
+    matInstance.randomInstance(4, 0, false);
+//    matInstance.loadTSPLIB("../ALL_tsp/bays29.tsp");
     matInstance.printCities();
 
     eucInstance.saveSerialized("eucTest.h5", false);

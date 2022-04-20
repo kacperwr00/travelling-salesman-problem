@@ -14,10 +14,11 @@ int main()
 {
     EuclideanTSPInstance eucInstance;
     MatrixTSPInstance matInstance;
-    // instance.randomInstance(4, 0);
-    eucInstance.loadSerialized("eucTest.h5", false);
+    eucInstance.randomInstance(4, 0);
+//    eucInstance.loadSerialized("eucTest.h5", false);
     eucInstance.printCities();
-    matInstance.loadSerialized("matTest.h5", false);
+//    matInstance.loadSerialized("matTest.h5", false);
+    matInstance.randomInstance(4, 0, false);
     matInstance.printCities();
 
     eucInstance.deleteInstance();
