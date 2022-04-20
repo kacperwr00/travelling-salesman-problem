@@ -9,6 +9,77 @@ namespace util
 
 enum problemType {Euclidean, DistanceMatrix};
 
+void experiment2()
+{
+    EuclideanTSPInstance euclInstance;
+
+    for (uint8_t variant = 0; variant < 5; variant++)
+    {
+        euclInstance.randomInstance(1234, 1500);
+        time_t t = clock();
+        euclInstance.variant2Opt(variant);
+        t = clock() - t;
+        int obj = euclInstance.objectiveFunction();
+        printf("%d, %ld, %d", variant, t, obj);
+    }
+}
+
+void experiment2itrzyczwarte()
+{
+    EuclideanTSPInstance matInstance;
+
+    for (uint8_t variant = 0; variant < 5; variant++)
+    {
+        matInstance.randomInstance(1234, 5000);
+        time_t t = clock();
+        matInstance.variant2Opt(variant);
+        t = clock() - t;
+        int obj = matInstance.objectiveFunction();
+        printf("%d, %ld, %d\n", variant, t, obj);
+    }
+}
+
+void experiment3()
+{
+    EuclideanTSPInstance euclInstance;
+    MatrixTSPInstance matInstance;
+
+    
+    for (long timeLimit = 1000; timeLimit < 10000000; timeLimit *= 2)
+    {
+        euclInstance.randomInstance(1234, 1500);
+
+        euclInstance.timedTestKRandom(timeLimit, 12 + clock());
+        int KRandomObjectiveFunction = euclInstance.objectiveFunction();
+
+        euclInstance.timedTestNNearestNeighboor(timeLimit);
+        int nearestNNeighboorObjectiveFunction = euclInstance.objectiveFunction();
+
+        euclInstance.timedTest2Opt(timeLimit);
+        int twoOptObjectiveFunction = euclInstance.objectiveFunction();
+
+        printf("%s, %ld, %d, %d, %d\n", "RandomEuclSeed=1234Cities=10000", timeLimit / 1000, KRandomObjectiveFunction, nearestNNeighboorObjectiveFunction, twoOptObjectiveFunction);
+        euclInstance.deleteInstance();
+    }
+
+    for (long timeLimit = 1000; timeLimit < 10000000; timeLimit *= 2)
+    {
+        matInstance.randomInstance(1234, 1500, false);
+
+        matInstance.timedTestKRandom(timeLimit, 12 + clock());
+        int KRandomObjectiveFunction = matInstance.objectiveFunction();
+
+        matInstance.timedTestNNearestNeighboor(timeLimit);
+        int nearestNNeighboorObjectiveFunction = matInstance.objectiveFunction();
+
+        matInstance.timedTest2Opt(timeLimit);
+        int twoOptObjectiveFunction = matInstance.objectiveFunction();
+
+        printf("%s, %ld, %d, %d, %d\n", "RandomMatSeed=1234Cities=10000", timeLimit / 1000, KRandomObjectiveFunction, nearestNNeighboorObjectiveFunction, twoOptObjectiveFunction);
+        matInstance.deleteInstance();
+    }
+}
+
 void algorithmsTest(bool N)
 {
     if (N)
@@ -130,8 +201,10 @@ void algorithmsTest(bool N)
 
 int main()
 {
-    algorithmsTest(false);
-    algorithmsTest(true);
+    // algorithmsTest(false);
+    // algorithmsTest(true);
+
+    experiment2itrzyczwarte();
 
     return 0;
 }
