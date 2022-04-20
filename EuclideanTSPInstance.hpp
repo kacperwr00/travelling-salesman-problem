@@ -1,3 +1,5 @@
+#pragma once
+
 #include <morph/Visual.h>
 #include <morph/GraphVisual.h>
 #include <morph/vVector.h>
@@ -12,6 +14,7 @@
 #include <ctime>
 #include <cstdlib>
 #include <climits>
+#include "TabuList.hpp"
 
 #define CITY_LIMIT 150
 #define BUFSIZE 2048
@@ -26,6 +29,11 @@ class EuclideanTSPInstance
         unsigned targetVisualizationDelay = 300;
         unsigned max2OptIterations = 1000;
         int** citiesCached;
+
+        typedef void (EuclideanTSPInstance::*moveFunction)(unsigned i, unsigned j);
+        typedef int (EuclideanTSPInstance::*measureFunction)(unsigned i, unsigned j);
+        typedef std::vector<std::pair<unsigned, unsigned>> (EuclideanTSPInstance::*neighboorhoodFunction)();
+        typedef void (EuclideanTSPInstance::*startingSolution)(bool visualization);
 
     public:
         unsigned getCityCount()
@@ -362,7 +370,7 @@ class EuclideanTSPInstance
             int bestResult = INT_MAX;
             bool* visited = (bool*)malloc(cityCount * sizeof(*visited));
 
-            for (unsigned k = 0; k < cityCount && clock() - startTimestamp < timeLimit; k++)
+            for (unsigned k = 0; k < cityCount && clock() - startTimestamp < timeLimit && k; k++)
             {
                 solution.clear();
                 
@@ -695,13 +703,6 @@ class EuclideanTSPInstance
 
             // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
-            int currentCost = objectiveFunction();
-
-            if (currentCost == 0)
-            {
-                return;
-            }
-
             bool changes = true;
             unsigned iteration = 0;
 
@@ -756,6 +757,164 @@ class EuclideanTSPInstance
             }
 
             // std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
+        }
+
+        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool withVisualization, 
+                startingSolution solver, moveFunction move, neighboorhoodFunction neighboors, measureFunction measure)
+        {
+            clock_t finishTimestamp = clock() + timeLimit;
+
+            //Euclidean are always symmetric
+            TabuList tabuList(listLength, cityCount, true);
+
+            (this->*solver)(false);
+            // solveKRandom(1, clock(), false);
+            
+            morph::vVector<unsigned> bestSolution = solution;
+            int currentCost = objectiveFunction();
+            int bestCost = currentCost;
+
+            std::cout << "Before Tabu: " << currentCost << std::endl; 
+
+            while (clock() < finishTimestamp)
+            {
+                std::pair<int, int> bestMove = std::make_pair(-1, -1);
+                int bestDifference = INT_MAX;
+
+                for (auto neighboor: (this->*neighboors)())
+                {
+                        unsigned i = neighboor.first, j = neighboor.second;
+                        //if neighboor not on tabu list -- posibly add aspiration criteria
+                        if (tabuList.checkMoveLegal(i, j))
+                        {
+                            //rozerwij i-tą oraz j-tą krawędź
+                            //sklej po odwróceniu jeśli lepiej
+
+                            int costDifference = (this->*measure)(i, j);
+                            
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
+                        }
+                }
+
+                if (bestDifference < INT_MAX)
+                {
+                    currentCost += bestDifference;
+                    if (currentCost < bestCost)
+                    {
+                        bestCost = currentCost;
+                        bestSolution = solution;
+                    }
+                    tabuList.addMoveToTabu(bestMove.first, bestMove.second);
+
+                    //invert
+                    (this->*move)(bestMove.first, bestMove.second);
+                }
+            }
+            solution = bestSolution;
+
+            std::cout << "After Tabu: " << objectiveFunction() << std::endl; 
+
+            tabuList.deleteList();
+        }
+
+        inline void symmetricInvert(unsigned i, unsigned j)
+        {
+            for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+            {
+                unsigned tmp = solution[j + m];
+                solution[j + m] = solution[i - (m - 1)];
+                solution[i - (m - 1)] = tmp;
+            }
+        }
+
+        inline int invertAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            if (i == cityCount - 1)
+            {
+                int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
+                costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                costDifference -= citiesDistance(cities[solution[i]], cities[solution[0]]);
+
+                return costDifference;
+            }
+
+            int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+            costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
+            costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+            costDifference -= citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+
+            return costDifference; 
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> symmetricInvertNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < i; j++)
+                {
+                    res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
+        } 
+
+        inline void symmetricSwap(unsigned i, unsigned j)
+        {
+            unsigned tmp = solution[j];
+            solution[j] = solution[i];
+            solution[i] = tmp;
+        }
+
+        inline int swapAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            if (i == j + 1)
+            {
+                unsigned iSucc = (i + 1) % cityCount, jPred = (j - 1) % cityCount; 
+                int costDifference = citiesDistance(cities[solution[j]], cities[solution[iSucc]]); 
+                costDifference += citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+                costDifference -= citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+                costDifference -= citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+                return costDifference;
+            }
+            unsigned jSucc = (j + 1) % cityCount, jPred = (j - 1) % cityCount,
+                    iSucc = (i + 1) % cityCount, iPred = (i - 1) % cityCount;
+
+            int costDifference = citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
+            costDifference += citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+
+            costDifference += citiesDistance(cities[solution[j]], cities[solution[iSucc]]);
+            costDifference += citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+
+            costDifference -= citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
+            costDifference -= citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+            costDifference -= citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+            costDifference -= citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+
+            return costDifference; 
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> symmetricSwapNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < i; j++)
+                {
+                    res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
         }
 
         void loadTSPLIB(const char* fileName) 

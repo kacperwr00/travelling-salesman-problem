@@ -1,0 +1,33 @@
+
+Tabu Search - pierwsza omawiana metaheurystyka
+
+- z rodziny przeszukiwania lokalnego/lokalnej poprawy
+- zapamiętujemy konkretne wykonywane ruchy i zakazujemy ich wykonywania w przyszłości
+- zwykle (pewien niuans - nie mozemy rozbudowywac tego mechanizmu zakazywania) wystarczy 
+    to by nie wracać do miejsc w których juz bylismy
+- czasami pamietamy 7, 40, 100 ostatnich ruchow na liscie
+- malo zapamietywanych zabronionych ruchow - latwiej wpadamy w cykle
+- duzo - moze sie zdazyc, ze zaden ruch nie bedzie legalny w danym momencie i lagorytm się zapcha, zablokuje
+    bardziej blokujemy mozliwe rozwiazania
+- eksploatacja - male ruchy, eksploracja - duze, np operator kick
+- wracanie do miejsc, ktore byly obiecujace - i ich list zakazanych + ruchów ktore wteddy wykonalismy
+    mozna w ten sposob wyjsc w innym kierunku z obiecujacego miejsca
+
+mamy przetestowac wiele roznych wariantow tego algorytmu i oszacowaniu tego, ktore sa lepsze (przynajmniej dla naszych isntancji)
+jezeli cos poprawia zlozonosc obliczeniowa i nie pogarsza nic innego - mowimy, ze zawsze jest lepszy
+
+moze warto dodac jakis niedeterminizm - losowy restart, kick?
+
+kryterium aspiracji - jezeli ruch jest zakazany, ale zrobienie go byloby lepsze niz cokolwiek co na razie znalezlismy, to ignnorujemy to, że jest na liscie i idziemy tam - mozna stosowac, ale nie trzeba
+kryterium stopu - albo czas - albo patrzymy ile krokow minelo od ostatniej poprawy - jesli za duzo to konczymy - albo osiagniecie jakiejs oczekiwanej wartosi funkcji celu - albo zablokowanie sie bo wszystkie zabronione (jesli mamy jeszcze budzet obliczeniowy mozna zrobic restart, kick)
+
+do uczciwego porowanania - czas, albo iteracje jesli ich zlozonosc jest zla
+
+rownoleglosc - kilka watkow z kilku roznych miejsc startowych robi tabu search
+    - mozna robić miedzy nimi synchronizacje zeby nie zbiegaly do tego samego miejsca
+- zrownoleglenie przeszukiwania otoczenia - wyboru najlepszego - kazdy watek np okresla wartosc jednego rozwiania
+
+zrobic podstawowy Tabu Search na nastepne zajecia
+- z invertem jako otoczeniem
+- z dlugoscia listy Tabu jako parametrem
+- rozwiazanie startowe - ktorakolwiek zrobiony juz heurystyka, np 2opt

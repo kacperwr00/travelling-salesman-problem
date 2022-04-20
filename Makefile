@@ -10,7 +10,7 @@ COMPILER_REQ_FLAGS = -D__GLN__ -DGL3_PROTOTYPES -DGL_GLEXT_PROTOTYPES -DMORPH_FO
 
 REQUIRED_INCLUDES = -I$(MORPHOLOGICA_PATH) -I$(MORPHOLOGICA_PATH)/include -isystem /usr/include/jsoncpp -isystem /usr/include/freetype2 -isystem /usr/include/hdf5/serial 
 
-.PHONY = all debug visual clean test
+.PHONY = all debug visual clean tabu test
 
 all: 
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual testVisual.cpp $(SHARED_LIBS)
@@ -25,5 +25,8 @@ debug:
 visual:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual testVisual.cpp $(SHARED_LIBS)
 
+tabu:
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testTabu testTabu.cpp $(SHARED_LIBS)
+
 clean:
-	rm -f testVisual testLoad testSave
+	rm -f testVisual testLoad testSave testTabu
