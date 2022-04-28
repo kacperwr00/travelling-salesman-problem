@@ -821,6 +821,41 @@ class EuclideanTSPInstance
             tabuList.deleteList();
         }
 
+        // insert sulution[i] at index j
+        inline void symmetricInsert(unsigned i, unsigned j)
+        {
+            unsigned toInclude = solution[i];
+
+            solution.erase(solution.begin() + i);
+            solution.insert(solution.begin() + j, toInclude);
+        }
+        
+        inline int insertAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            int costDifference = citiesDistance(cities[solution[(j - 1) % cityCount]], cities[solution[i]]);
+            costDifference += citiesDistance(cities[solution[i]], cities[solution[(j + 1) % cityCount]]);
+            costDifference -= citiesDistance(cities[solution[(i - 1) % cityCount]], cities[solution[i]]);
+            costDifference -= citiesDistance(cities[solution[i]], cities[solution[(i + 1) % cityCount]]);
+            
+            return costDifference;
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> symmetricInsertNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < cityCount; j++)
+                {
+                    if (i != j)
+                        res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
+        }
+
         inline void symmetricInvert(unsigned i, unsigned j)
         {
             for (unsigned m = 1; m < (i - j) / 2 + 1; m++)

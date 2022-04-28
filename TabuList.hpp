@@ -1,7 +1,7 @@
 #pragma once
 #include <utility>
 
-//for invert/swap neighboorhoods
+//for invert/swap style neighboorhoods
 class TabuList {
 
     private:
