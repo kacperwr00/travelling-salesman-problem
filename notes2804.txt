@@ -1,0 +1,25 @@
+Na przykład:
+
+na 5.5:
+- np. równoległość (np. ocenianie otoczenia)
+- np. dużo więcej wariantów  
+- np. skorzystanie z parameter tunera
+
+gdzieś pomiędzy 5.5 a 5:
+- lista długoterminowa (nawroty) (w zależności od tego jak bardzo wyrafinowana)
+
+na 5.0:
+- Testy statystyczne (Wilcoxon sparowany starczy) !!!!!
+- Co najmniej pięć wariantów (rózne startowe, różna długość listy tabu, różne otoczenia)
+- rozważyć rózny budżet obliczeniowy (n.p. wykres fkcji celu od czasu)
+- jakaś metoda eksploracji (np. kick w przypadku stagnacji (cierpliwość rośnie wraz ze wzrostem liczby iteracji), albo lista długoterminowa (nawroty))
+
+na 4.0:
+- testy z kryterium aspiracji i bez (jeżeli ruch zabroniony przez liste tabu, ale da najlepsza aktualnie znana wartosc fkcji celu to i tak tam idziemy)
+- uczciwa metoda porównania wariantów (i.e. kryterium stopu czasowe tak by miarodajnie porównywać algorytmów)
+- Testowanie co najmniej dwa otoczenia
+- akceleracja co najmniej 1 otoczenia
+
+na 3.0:
+- działający jakikolwiek tabu search
+- badania - co najmniej dwoch wariantow na co najmniej 5 instancjach

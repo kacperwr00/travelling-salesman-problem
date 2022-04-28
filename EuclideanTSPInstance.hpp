@@ -767,12 +767,16 @@ class EuclideanTSPInstance
             //Euclidean are always symmetric
             TabuList tabuList(listLength, cityCount, true);
 
+            //get starting position
             (this->*solver)(false);
             // solveKRandom(1, clock(), false);
             
             morph::vVector<unsigned> bestSolution = solution;
             int currentCost = objectiveFunction();
             int bestCost = currentCost;
+
+            int iterationsWithoutImprovement = 0;
+            long iterationCount = 0;
 
             std::cout << "Before Tabu: " << currentCost << std::endl; 
 
@@ -783,34 +787,56 @@ class EuclideanTSPInstance
 
                 for (auto neighboor: (this->*neighboors)())
                 {
-                        unsigned i = neighboor.first, j = neighboor.second;
-                        //if neighboor not on tabu list -- posibly add aspiration criteria
-                        if (tabuList.checkMoveLegal(i, j))
-                        {
-                            //rozerwij i-tą oraz j-tą krawędź
-                            //sklej po odwróceniu jeśli lepiej
-
-                            int costDifference = (this->*measure)(i, j);
-                            
-                            if (costDifference < bestDifference)
-                            {
-                                bestDifference = costDifference;
-                                bestMove = std::make_pair(i, j);
-                            }
+                    unsigned i = neighboor.first, j = neighboor.second;
+                    
+                    //kryterium aspiracji - bez niego measure wepchnac do drugiego ifa, a pierwszego usunac
+                    int costDifference = (this->*measure)(i, j);
+                    
+                    //if the best - don't even check if it is on tabu list
+                    if (currentCost + costDifference < bestCost)
+                    {   
+                        if (costDifference < bestDifference)
+                        {    
+                            bestDifference = costDifference;
+                            bestMove = std::make_pair(i, j);
                         }
+                    }
+                    else if (tabuList.checkMoveLegal(i, j))
+                    {
+                        if (costDifference < bestDifference)
+                        {
+                            bestDifference = costDifference;
+                            bestMove = std::make_pair(i, j);
+                        }
+                    }
                 }
 
                 if (bestDifference < INT_MAX)
                 {
                     currentCost += bestDifference;
+                    iterationCount++;
+
                     if (currentCost < bestCost)
                     {
                         bestCost = currentCost;
                         bestSolution = solution;
+
+                        iterationsWithoutImprovement = 0;
+                        //TODO: save for longterm list here
+                    }
+                    else
+                    {
+                        iterationsWithoutImprovement++;
+
+                        if (iterationsWithoutImprovement == (iterationCount + 1000) >> 3)
+                        {
+                            //TODO: kick or restore from longterm list
+                            std::cout << "KICKING RN" << std::endl;
+                            iterationsWithoutImprovement = 0;
+                        }
                     }
                     tabuList.addMoveToTabu(bestMove.first, bestMove.second);
 
-                    //invert
                     (this->*move)(bestMove.first, bestMove.second);
                 }
             }
