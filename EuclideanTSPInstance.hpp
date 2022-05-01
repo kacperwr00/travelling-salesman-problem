@@ -1042,16 +1042,16 @@ class EuclideanTSPInstance
 
         inline int swapAcceleratedMeasurement(unsigned i, unsigned j)
         {
-            // if (!j && i == cityCount - 1)
-            // {
-            //     unsigned iPred = (i - 1) % cityCount; 
-            //     int costDifference = citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
-            //     costDifference += citiesDistance(cities[solution[i]], cities[solution[1]]);
-            //     costDifference -= citiesDistance(cities[solution[iPred]], cities[solution[i]]);
-            //     costDifference -= citiesDistance(cities[solution[j]], cities[solution[1]]);
+            if (!j && i == cityCount - 1)
+            {
+                unsigned iPred = (i - 1) % cityCount; 
+                int costDifference = citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
+                costDifference += citiesDistance(cities[solution[i]], cities[solution[1]]);
+                costDifference -= citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+                costDifference -= citiesDistance(cities[solution[j]], cities[solution[1]]);
 
-            //     return costDifference;
-            // }
+                return costDifference;
+            }
             if (i == (j + 1) % cityCount)
             {
                 unsigned iSucc = (i + 1) % cityCount, jPred = (j - 1) % cityCount; 
