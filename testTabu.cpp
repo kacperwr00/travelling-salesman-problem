@@ -4,12 +4,17 @@
 int main()
 {
     EuclideanTSPInstance euclInstance;
-    euclInstance.randomInstance(clock(), 2000);
-    euclInstance.solveTabuSearch(45, CLOCKS_PER_SEC * 30, false, &EuclideanTSPInstance::solveNearestNeighboor, &EuclideanTSPInstance::symmetricSwap, 
+    euclInstance.randomInstance(clock(), 700);
+    euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, false, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricInvert, 
+        &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
+
+    euclInstance.randomInstance(clock(), 700);
+    euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, false, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricSwap, 
         &EuclideanTSPInstance::symmetricSwapNeighboorhood, &EuclideanTSPInstance::swapAcceleratedMeasurement);
 
-    euclInstance.randomInstance(clock(), 2000);
-    euclInstance.solveTabuSearch(45, CLOCKS_PER_SEC * 30, false, &EuclideanTSPInstance::solveNearestNeighboor, &EuclideanTSPInstance::symmetricInsert, 
+
+    euclInstance.randomInstance(clock(), 700);
+    euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, false, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricInsert, 
         &EuclideanTSPInstance::symmetricInsertNeighboorhood, &EuclideanTSPInstance::insertAcceleratedMeasurement);
 
 
