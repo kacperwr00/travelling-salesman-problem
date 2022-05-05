@@ -760,7 +760,7 @@ class EuclideanTSPInstance
             // std::cout << "After inverts: " << objectiveFunction() << "after iterations: " << iteration << std::endl; 
         }
 
-        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool withVisualization, 
+        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool verbose, const bool withVisualization, const bool aspiration, 
                 startingSolution solver, moveFunction move, neighboorhoodFunction neighboors, measureFunction measure)
         {
             clock_t finishTimestamp = clock() + timeLimit;
@@ -784,7 +784,8 @@ class EuclideanTSPInstance
             unsigned iterationsWithoutImprovement = 0;
             long unsigned iterationCount = 0;
 
-            std::cout << "Before Tabu: " << currentCost << std::endl; 
+            if (verbose)
+                std::cout << "Before Tabu: " << currentCost << std::endl; 
 
             while (clock() < finishTimestamp)
             {
@@ -796,23 +797,38 @@ class EuclideanTSPInstance
                     unsigned i = neighboor.first, j = neighboor.second;
                     
                     //kryterium aspiracji - bez niego measure wepchnac do drugiego ifa, a pierwszego usunac
-                    int costDifference = (this->*measure)(i, j);
-                    
-                    //if the best - don't even check if it is on tabu list
-                    if (currentCost + costDifference < bestCost)
-                    {   
-                        if (costDifference < bestDifference)
-                        {    
-                            bestDifference = costDifference;
-                            bestMove = std::make_pair(i, j);
+                    if (aspiration)
+                    {
+                        int costDifference = (this->*measure)(i, j);
+                        
+                        //if the best - don't even check if it is on tabu list
+                        if (currentCost + costDifference < bestCost)
+                        {   
+                            if (costDifference < bestDifference)
+                            {    
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
+                        }
+                        else if (tabuList.checkMoveLegal(i, j))
+                        {
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
                         }
                     }
-                    else if (tabuList.checkMoveLegal(i, j))
+                    else
                     {
-                        if (costDifference < bestDifference)
+                        if (tabuList.checkMoveLegal(i, j))
                         {
-                            bestDifference = costDifference;
-                            bestMove = std::make_pair(i, j);
+                            int costDifference = (this->*measure)(i, j);
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
                         }
                     }
                 }
@@ -899,7 +915,8 @@ class EuclideanTSPInstance
             }
             solution = bestSolution;
 
-            std::cout << "After Tabu: " << objectiveFunction() << std::endl; 
+            if (verbose)
+                std::cout << "After Tabu: " << objectiveFunction() << std::endl; 
 
             tabuList.deleteList();
         }
