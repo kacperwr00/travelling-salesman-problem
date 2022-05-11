@@ -32,6 +32,11 @@ class MatrixTSPInstance
         unsigned max2OptIterations = 1000;
         bool symmetric = false;
 
+        typedef void (MatrixTSPInstance::*moveFunction)(unsigned i, unsigned j);
+        typedef int (MatrixTSPInstance::*measureFunction)(unsigned i, unsigned j);
+        typedef std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*neighboorhoodFunction)();
+        typedef void (MatrixTSPInstance::*startingSolution)(bool visualization);
+
     public:
         // ALGORYTMY HEURYSTYCZNE:
         // k-random - losujemy k rozwiązań i bierzemy najlepsze

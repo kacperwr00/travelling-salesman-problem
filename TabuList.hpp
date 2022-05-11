@@ -23,7 +23,7 @@ class TabuList {
             length = len;
             currentIndex = 0;
             tabuList = new int*[cityCount];
-            for (int i = 0; i< cityCount; i++)
+            for (int i = 0; i < cityCount; i++)
             {
                 tabuList[i] = new int[cityCount];
             }
