@@ -1,7 +1,6 @@
 #include "TabuList.hpp"
 #include "MatrixTSPInstance.hpp"
 #include "EuclideanTSPInstance.hpp"
-#include "MatrixTSPInstance.hpp"
 
 int main()
 {

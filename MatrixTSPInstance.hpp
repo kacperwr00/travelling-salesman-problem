@@ -229,8 +229,8 @@ class MatrixTSPInstance
                                 costDifference -= cities[solution[k]][solution[k + 1]];
                                 costDifference += cities[solution[k + 1]][solution[k]];
                             }
-                            costDifference -= cities[solution[cityCount]][solution[0]];
-                            costDifference += cities[solution[0]][solution[cityCount]];
+                            costDifference -= cities[solution[cityCount - 1]][solution[0]];
+                            costDifference += cities[solution[0]][solution[cityCount - 1]];
                             for (unsigned k = 0; k < i; k++)
                             {
                                 costDifference -= cities[solution[k]][solution[k + 1]];
@@ -389,8 +389,8 @@ class MatrixTSPInstance
                                 costDifference -= cities[solution[k]][solution[k + 1]];
                                 costDifference += cities[solution[k + 1]][solution[k]];
                             }
-                            costDifference -= cities[solution[cityCount]][solution[0]];
-                            costDifference += cities[solution[0]][solution[cityCount]];
+                            costDifference -= cities[solution[cityCount - 1]][solution[0]];
+                            costDifference += cities[solution[0]][solution[cityCount - 1]];
                             for (unsigned k = 0; k < i; k++)
                             {
                                 costDifference -= cities[solution[k]][solution[k + 1]];
@@ -702,7 +702,7 @@ class MatrixTSPInstance
             // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt(const bool symmetric)
+        void solve2Opt()
         {
             if (symmetric)
                 return solve2OptSymmetric();
@@ -1068,8 +1068,8 @@ class MatrixTSPInstance
                     costDifference -= cities[solution[k]][solution[k + 1]];
                     costDifference += cities[solution[k + 1]][solution[k]];
                 }
-                costDifference -= cities[solution[cityCount]][solution[0]];
-                costDifference += cities[solution[0]][solution[cityCount]];
+                costDifference -= cities[solution[cityCount - 1]][solution[0]];
+                costDifference += cities[solution[0]][solution[cityCount - 1]];
                 for (unsigned k = 0; k < i; k++)
                 {
                     costDifference -= cities[solution[k]][solution[k + 1]];
@@ -1248,7 +1248,7 @@ class MatrixTSPInstance
         void solve2OptSymmetric() 
         {
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
-            solveNNearestNeighboor();
+            solveNearestNeighboor();
 
             // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
@@ -1318,7 +1318,7 @@ class MatrixTSPInstance
 
         void solve2OptNonSymmetric() 
         {
-            solveNNearestNeighboor();
+            solveNearestNeighboor();
 
             // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
 
@@ -1360,8 +1360,8 @@ class MatrixTSPInstance
                                 costDifference -= cities[solution[k]][solution[k + 1]];
                                 costDifference += cities[solution[k + 1]][solution[k]];
                             }
-                            costDifference -= cities[solution[cityCount]][solution[0]];
-                            costDifference += cities[solution[0]][solution[cityCount]];
+                            costDifference -= cities[solution[cityCount - 1]][solution[0]];
+                            costDifference += cities[solution[0]][solution[cityCount - 1]];
                             for (unsigned k = 0; k < i; k++)
                             {
                                 costDifference -= cities[solution[k]][solution[k + 1]];
@@ -1385,8 +1385,13 @@ class MatrixTSPInstance
                                 for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
                                 {
                                     unsigned tmp = solution[j + m];
-                                    solution[j + m] = solution[i - (m - 1)];
-                                    solution[i - (m - 1)] = tmp;
+                                    int tmpIndex = (i - (m - 1)) % cityCount;
+                                    if (tmpIndex < 0)
+                                    {
+                                        tmpIndex += cityCount;
+                                    }
+                                    solution[j + m] = solution[tmpIndex];
+                                    solution[tmpIndex] = tmp;
                                 }
                             }
                             else
@@ -1394,8 +1399,13 @@ class MatrixTSPInstance
                                 for (unsigned m = 1; m < (j - i) / 2 + 1; m++)
                                 {
                                     unsigned tmp = solution[(j + m) % cityCount];
-                                    solution[(j + m) % cityCount] = solution[(i - (m - 1)) % cityCount];
-                                    solution[(i - (m - 1)) % cityCount] = tmp;
+                                    int tmpIndex = (i - (m - 1)) % cityCount;
+                                    if (tmpIndex < 0)
+                                    {
+                                        tmpIndex += cityCount;
+                                    }
+                                    solution[(j + m) % cityCount] = solution[tmpIndex];
+                                    solution[tmpIndex] = tmp;
                                 }
                             }
                         }

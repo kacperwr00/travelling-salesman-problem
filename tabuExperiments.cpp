@@ -57,13 +57,13 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
             switch(i)
             {
                 case 0:
-                    matInstance.loadTSPLIB("../../ALL_tsp/a280.tsp");
+                    matInstance.loadTSPLIB("../../ALL_tsp/swiss42.tsp");
                     break;
                 case 1:
-                    matInstance.loadTSPLIB("../../ALL_tsp/berlin52.tsp");
+                    matInstance.loadTSPLIB("../../ALL_tsp/bays29.tsp");
                     break;
                 case 2:
-                    matInstance.loadTSPLIB("../../ALL_tsp/bier127.tsp");
+                    matInstance.loadTSPLIB("../../ALL_tsp/dantzig42.tsp");
                     break;
                 default:    
                     matInstance.randomInstance(seed, ((i - 2) * 2 - 1), false);
@@ -77,18 +77,18 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
             std::cout << timeLimit << "," << instanceCountOfEachType + i << "," << matInstance.getCityCount() << ",";
             
             // //aspiration, invertNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 7
-            // matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::symmetricInvert, 
-            // &MatrixTSPInstance::symmetricInvertNeighboorhood, &MatrixTSPInstance::invertAcceleratedMeasurement);
+            matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
             std::cout << matInstance.objectiveFunction() << ",";
 
             // //aspiration, swapNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 7
-            // matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::symmetricInsert, 
-            // &MatrixTSPInstance::symmetricInsertNeighboorhood, &MatrixTSPInstance::insertAcceleratedMeasurement);
+            matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::insert, 
+            &MatrixTSPInstance::insertNeighboorhood, &MatrixTSPInstance::insertMeasurement);
             std::cout << matInstance.objectiveFunction() << ",";
 
             // //aspiration, insertNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 7
-            // matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::symmetricSwap, 
-            // &MatrixTSPInstance::symmetricSwapNeighboorhood, &MatrixTSPInstance::swapAcceleratedMeasurement);
+            matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::swap, 
+            &MatrixTSPInstance::swapNeighboorhood, &MatrixTSPInstance::swapMeasurement);
             std::cout << matInstance.objectiveFunction() << ",";
 
             std::cout << std::endl;
@@ -101,7 +101,7 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
 
 int main()
 {
-    runExperiment1(7, 123, 567, {3, 4, 5});
+    runExperiment1(7, 12345, 567, {3, 4, 5});
 
     return 0;
 }
