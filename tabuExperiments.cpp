@@ -1,11 +1,11 @@
 #include "EuclideanTSPInstance.hpp"
 #include "MatrixTSPInstance.hpp"
 
-
 void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, std::vector<unsigned> timeLimits) {
     EuclideanTSPInstance euclInstance;
     MatrixTSPInstance matInstance;
 
+    std::cout << "EUCL" << std::endl;
     for (unsigned timeLimit: timeLimits)
     {
         std::cout << "Time limit = " << timeLimit << " seconds" << std::endl << std::endl;
@@ -50,6 +50,7 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
             std::cout << std::endl;
         }
 
+        std::cout << "MATRIX" << std::endl;
         //matrix instances
         for (int i = 0; i < instanceCountOfEachType; i++) 
         {
