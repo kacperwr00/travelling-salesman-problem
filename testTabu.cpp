@@ -23,18 +23,24 @@ int main()
 
     std::cout << "MATRIX" << std::endl;
     MatrixTSPInstance matrixTspInstance;
-    matrixTspInstance.randomInstance(clock(), 90, false);
-    matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert,
-                                 &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+    //no aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 35
+            matrixTspInstance.loadTSPLIB("../../ALL_tsp/dantzig42.tsp");
+            matrixTspInstance.solveTabuSearch(35, CLOCKS_PER_SEC * 5, false, false, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+            std::cout << matrixTspInstance.objectiveFunction() << ",";
 
-    matrixTspInstance.randomInstance(clock(), 90, false);
-    matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::swap,
-                                 &MatrixTSPInstance::swapNeighboorhood, &MatrixTSPInstance::swapMeasurement);
+    // matrixTspInstance.randomInstance(clock(), 90, false);
+    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert,
+    //                              &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+
+    // matrixTspInstance.randomInstance(clock(), 90, false);
+    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::swap,
+    //                              &MatrixTSPInstance::swapNeighboorhood, &MatrixTSPInstance::swapMeasurement);
 
 
-    matrixTspInstance.randomInstance(clock(), 90, false);
-    matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, false, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::insert,
-                                 &MatrixTSPInstance::insertNeighboorhood, &MatrixTSPInstance::insertMeasurement);
+    // matrixTspInstance.randomInstance(clock(), 90, false);
+    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, false, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::insert,
+    //                              &MatrixTSPInstance::insertNeighboorhood, &MatrixTSPInstance::insertMeasurement);
 
 
     matrixTspInstance.deleteInstance();

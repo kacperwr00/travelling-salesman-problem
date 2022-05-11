@@ -741,6 +741,14 @@ class MatrixTSPInstance
                 std::pair<int, int> bestMove = std::make_pair(-1, -1);
                 int bestDifference = INT_MAX;
 
+                if (solution.size() < cityCount)
+                {
+                    std::cout << "Error encountered";
+                    solution = bestSolution;
+                    return;
+                }
+
+
                 for (auto neighboor: (this->*neighboors)())
                 {
                     unsigned i = neighboor.first, j = neighboor.second;
@@ -863,7 +871,17 @@ class MatrixTSPInstance
                 }
                 else
                 {
-                    std::cout << "STUCK " << iterationCount << std::endl;
+                    //nie znaleźliśmy żadnego legalnego ruchu, zacznij poszukiwanie od nowa z losowego miejsca
+                    //seed zalezny od instancji utrzymuje nam determinizm
+                    solveKRandom(1, cityCount);
+                    tabuList.clear();
+                    while(!longtermList.empty())
+                        longtermList.pop();
+
+                    longtermList.push(std::make_pair(tabuList, solution));
+                    toBanLongterm = true;
+                    currentCost = objectiveFunction();
+                    iterationsWithoutImprovement = 0;
                 }
             }
             solution = bestSolution;

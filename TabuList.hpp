@@ -61,6 +61,17 @@ class TabuList {
             return true;
         }
 
+        void clear()
+        {
+            deleteList();
+            tabuList = new int*[cityCount];
+            for (int i = 0; i < cityCount; i++)
+            {
+                tabuList[i] = new int[cityCount];
+            }
+            tabuListQueue = new std::pair<int, int>[length]();
+        }
+
         void deleteList()
         {
             for (int i = 0; i < cityCount; i++)
