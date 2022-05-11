@@ -66,7 +66,7 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
                     matInstance.loadTSPLIB("../../ALL_tsp/dantzig42.tsp");
                     break;
                 default:    
-                    matInstance.randomInstance(seed, ((i - 2) * 2 - 1), false);
+                    matInstance.randomInstance(seed, ((i - 2) * 2 - 1) * baseCityCount, false);
                     break;
             }
 
