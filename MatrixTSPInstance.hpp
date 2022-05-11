@@ -702,9 +702,8 @@ class MatrixTSPInstance
             // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt(const bool withVisualization)
+        void solve2Opt() 
         {
-            //todo visualization
             if (symmetric)
                 return solve2OptSymmetric();
             solve2OptNonSymmetric();
