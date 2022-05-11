@@ -710,17 +710,18 @@ class MatrixTSPInstance
             solve2OptNonSymmetric();
         }
 
-        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool verbose, const bool withVisualization, const bool aspiration, const bool symmetric,
-                         startingSolution solver, moveFunction move, neighboorhoodFunction neighboors, measureFunction measure)
+        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool verbose, const bool aspiration, 
+                startingSolution solver, moveFunction move, neighboorhoodFunction neighboors, measureFunction measure)
         {
             clock_t finishTimestamp = clock() + timeLimit;
 
+            //Euclidean are always symmetric
             TabuList tabuList(listLength, cityCount, symmetric);
 
             //get starting position
             (this->*solver)(false);
             // solveKRandom(1, clock(), false);
-
+            
             //initialize longtermList
             std::stack<std::pair<TabuList, morph::vVector<unsigned>>> longtermList;
             longtermList.push(std::make_pair(tabuList, solution));
@@ -734,7 +735,7 @@ class MatrixTSPInstance
             long unsigned iterationCount = 0;
 
             if (verbose)
-                std::cout << "Before Tabu: " << currentCost << std::endl;
+                std::cout << "Before Tabu: " << currentCost << std::endl; 
 
             while (clock() < finishTimestamp)
             {
@@ -744,17 +745,17 @@ class MatrixTSPInstance
                 for (auto neighboor: (this->*neighboors)())
                 {
                     unsigned i = neighboor.first, j = neighboor.second;
-
-                    //kryterium aspiracji - bez niego measure wepchnac do drugiego ifa, a pierwszego usunac
+                    
+                    //kryterium aspiracji
                     if (aspiration)
                     {
                         int costDifference = (this->*measure)(i, j);
-
+                        
                         //if the best - don't even check if it is on tabu list
                         if (currentCost + costDifference < bestCost)
-                        {
+                        {   
                             if (costDifference < bestDifference)
-                            {
+                            {    
                                 bestDifference = costDifference;
                                 bestMove = std::make_pair(i, j);
                             }
@@ -782,6 +783,7 @@ class MatrixTSPInstance
                     }
                 }
 
+                //znaleziona legalną zmianę
                 if (bestDifference < INT_MAX)
                 {
                     currentCost += bestDifference;
@@ -796,6 +798,8 @@ class MatrixTSPInstance
 
                     if (currentCost < bestCost)
                     {
+                        //znalezion najlepsze aktualnie rozwiązanie
+
                         // if (currentCost < objectiveFunction())
                         // {
                         //     std::cout << "ALERT " << bestMove.first << " " << bestMove.second << " " << iterationCount << " costDifference: " << bestDifference << " actual: " << currentCost - objectiveFunction() << std::endl;
@@ -814,6 +818,7 @@ class MatrixTSPInstance
                     {
                         iterationsWithoutImprovement++;
 
+                        //example condition
                         if (iterationsWithoutImprovement == ((unsigned)sqrt(iterationCount) + (cityCount >> 1)))
                         {
                             //TODO: kick or restore from longterm list
@@ -824,21 +829,21 @@ class MatrixTSPInstance
                                 iterationsWithoutImprovement = 0;
 
                                 //deterministc but maybe random looking kick?
-                                for (unsigned index = (((iterationsWithoutImprovement << 1) + iterationCount) % cityCount) >> 2;
-                                     index < cityCount; index += 7)
+                                for (unsigned index = (((iterationsWithoutImprovement << 1) + iterationCount) % cityCount) >> 2; 
+                                                    index < cityCount; index += 7)
                                 {
-                                    symmetricInvert(index, index - (index & 13));
+                                    invert(index, index - (index & 13)); 
                                 }
 
                                 currentCost = objectiveFunction();
-                                // do
+                                // do 
                                 // {
                                 //     solveKRandom(1, iterationCount, false);
                                 // } while (clock() < finishTimestamp && objectiveFunction() > 4 * bestCost);
                                 // std::cout << "Finished a kick" << std::endl;
 
                             }
-                            else
+                            else 
                             {
                                 auto restored = longtermList.top();
                                 longtermList.pop();
@@ -865,9 +870,380 @@ class MatrixTSPInstance
             solution = bestSolution;
 
             if (verbose)
-                std::cout << "After Tabu: " << objectiveFunction() << std::endl;
+                std::cout << "After Tabu: " << objectiveFunction() << std::endl; 
+            // for (int i = 0; i < )
 
             tabuList.deleteList();
+        }
+
+        inline void insert(unsigned i, unsigned j)
+        {
+            //TODO check if ok
+            unsigned toInclude = solution[i];
+            
+            solution.erase(solution.begin() + i);
+            solution.insert(solution.begin() + j, toInclude);
+        }
+
+        // //insert solution[i] at index j
+        // inline void symmetricInsert(unsigned i, unsigned j)
+        // {
+        //     unsigned toInclude = solution[i];
+
+        //     // if (i < j)
+        //     // {
+        //     //     solution.erase(solution.begin() + i);
+        //     //     solution.insert(solution.begin() + j, toInclude);
+
+        //     // }
+        //     // else
+        //     // {
+        //         solution.erase(solution.begin() + i);
+        //         solution.insert(solution.begin() + j, toInclude);
+        //     // }
+        // }
+
+        // inline void asymmetricInsert(unsigned i, unsigned j)
+        // {
+        //     //TODO check if ok
+        //     unsigned toInclude = solution[i];
+            
+        //     solution.erase(solution.begin() + i);
+        //     solution.insert(solution.begin() + j, toInclude);
+        // }
+        
+        inline int insertMeasurement(unsigned i, unsigned j)
+        {
+            if (symmetric)
+                return insertAcceleratedMeasurement(i, j);
+            return insertAsymmetricMeasurement(i, j);
+        }
+
+        inline int insertAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            if (i == j - 1)
+            {
+                unsigned iPred = (i - 1) % cityCount, jSucc = (j + 1) % cityCount; 
+                if (iPred < 0)
+                {
+                    iPred += cityCount;
+                }
+                int costDifference = cities[solution[i]][solution[jSucc]]; //citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
+                costDifference += cities[solution[iPred]][solution[j]];  //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+                costDifference -= cities[solution[j]][solution[jSucc]];//citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
+                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+
+                return costDifference;
+            }
+            if (i == j + 1)
+            {
+                return swapAcceleratedMeasurement(i, j);
+            }
+
+            int jpred = (j - 1) % cityCount;
+            if (jpred < 0)
+            {
+                jpred += cityCount;
+            }
+            int ipred = (i - 1) % cityCount;
+            if (ipred < 0)
+            {
+                ipred += cityCount;
+            }
+            int isucc = (i + 1) % cityCount;
+
+            int costDifference = cities[solution[jpred]][solution[i]]; //citiesDistance(cities[solution[jpred]], cities[solution[i]]);
+            costDifference += cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]);
+            costDifference += cities[solution[ipred]][solution[isucc]]; //citiesDistance(cities[solution[ipred]], cities[solution[isucc]]);
+            costDifference -= cities[solution[ipred]][solution[i]]; //citiesDistance(cities[solution[ipred]], cities[solution[i]]);
+            costDifference -= cities[solution[i]][solution[isucc]]; //citiesDistance(cities[solution[i]], cities[solution[isucc]]);
+            costDifference -= cities[solution[jpred]][solution[j]]; //citiesDistance(cities[solution[jpred]], cities[solution[j]]);
+
+            return costDifference;
+            
+            // int a = objectiveFunction();
+            // symmetricInsert(i, j);
+
+            // int b = objectiveFunction();
+            // symmetricInsert(j, i);
+
+            // return b-a;
+        }
+
+        inline int insertAsymmetricMeasurement(unsigned i, unsigned j)
+        {
+            //TODO check if okay 
+            int jpred = (j - 1) % cityCount;
+            if (jpred < 0)
+            {
+                jpred += cityCount;
+            }
+            int ipred = (i - 1) % cityCount;
+            if (ipred < 0)
+            {
+                ipred += cityCount;
+            }
+            int isucc = (i + 1) % cityCount;
+
+            int costDifference = cities[solution[jpred]][solution[i]]; //citiesDistance(cities[solution[jpred]], cities[solution[i]]);
+            costDifference += cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]);
+            costDifference += cities[solution[ipred]][solution[isucc]]; //citiesDistance(cities[solution[ipred]], cities[solution[isucc]]);
+            costDifference -= cities[solution[ipred]][solution[i]]; //citiesDistance(cities[solution[ipred]], cities[solution[i]]);
+            costDifference -= cities[solution[i]][solution[isucc]]; //citiesDistance(cities[solution[i]], cities[solution[isucc]]);
+            costDifference -= cities[solution[jpred]][solution[j]]; //citiesDistance(cities[solution[jpred]], cities[solution[j]]);
+
+            return costDifference;
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> insertNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 1; j < cityCount; j++)
+                {
+                    if (i != j)
+                        res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
+        }
+
+        inline void invert(unsigned i, unsigned j)
+        {
+            for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+            {
+                unsigned tmp = solution[j + m];
+                solution[j + m] = solution[i - (m - 1)];
+                solution[i - (m - 1)] = tmp;
+            }
+        }
+
+        inline int invertMeasurement(unsigned i, unsigned j)
+        {
+            if (symmetric)
+            {
+                return invertAcceleratedMeasurement(i, j);
+            }
+            return invertAsymmetricMeasurement(i, j);
+        }
+
+        inline int invertAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            if (i == cityCount - 1)
+            {
+                int costDifference = cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                costDifference += cities[solution[j + 1]][solution[0]]; //citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
+                costDifference -= cities[solution[j]][solution[j + 1]]; //citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                costDifference -= cities[solution[i]][solution[0]]; //citiesDistance(cities[solution[i]], cities[solution[0]]);
+
+                return costDifference;
+            }
+
+            int costDifference = cities[solution[i]][solution[j]];//citiesDistance(cities[solution[i]], cities[solution[j]]); 
+            costDifference += cities[solution[j + 1]][solution[i + 1]]; //citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
+            costDifference -= cities[solution[j]][solution[j + 1]]; //citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+            costDifference -= cities[solution[i]][solution[i + 1]]; //citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+
+            return costDifference; 
+        }
+
+        inline int invertAsymmetricMeasurement(unsigned i, unsigned j)
+        {
+            //TODO check if okay
+
+            int costDifference = cities[solution[i]][solution[j]]; 
+            costDifference += cities[solution[j + 1]][solution[i + 1]];
+            costDifference -= cities[solution[j]][solution[j + 1]];
+            costDifference -= cities[solution[i]][solution[i + 1]];
+
+            //krawędzie od j + 1 do i - 1 będą iść w drugą stronę:
+            //(jeśli j większe od i to musimy liczyć modulo cityCount) 
+
+            if (j > i)
+            {
+                for (unsigned k = j + 1; k < cityCount - 1; k++)
+                {
+                    costDifference -= cities[solution[k]][solution[k + 1]];
+                    costDifference += cities[solution[k + 1]][solution[k]];
+                }
+                costDifference -= cities[solution[cityCount]][solution[0]];
+                costDifference += cities[solution[0]][solution[cityCount]];
+                for (unsigned k = 0; k < i; k++)
+                {
+                    costDifference -= cities[solution[k]][solution[k + 1]];
+                    costDifference += cities[solution[k + 1]][solution[k]];
+                }
+            }
+            else
+            {
+                for (unsigned k = j + 1; k < i; k++)
+                {
+                    costDifference -= cities[solution[k]][solution[k + 1]];
+                    costDifference += cities[solution[k + 1]][solution[k]];
+                }
+            }
+
+            return costDifference;
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> invertNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < i; j++)
+                {
+                    res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
+        }
+
+        inline void swap(unsigned i, unsigned j)
+        {
+            unsigned tmp = solution[j];
+            solution[j] = solution[i];
+            solution[i] = tmp;
+        }
+
+        inline int swapMeasurement(unsigned i, unsigned j)
+        {
+            if (symmetric)
+            {
+                return swapAcceleratedMeasurement(i, j);
+            }
+            return swapAsymmetricMeasurement(i, j);
+        }
+
+        inline int swapAcceleratedMeasurement(unsigned i, unsigned j)
+        {
+            if (!j && i == cityCount - 1)
+            {
+                unsigned iPred = (i - 1) % cityCount; 
+                int costDifference = cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
+                costDifference += cities[solution[i]][solution[1]]; //citiesDistance(cities[solution[i]], cities[solution[1]]);
+                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+                costDifference -= cities[solution[j]][solution[1]]; //citiesDistance(cities[solution[j]], cities[solution[1]]);
+
+                return costDifference;
+            }
+            if (i == (j + 1) % cityCount)
+            {
+                unsigned iSucc = (i + 1) % cityCount, jPred = (j - 1) % cityCount; 
+                if (jPred < 0)
+                {
+                    jPred += cityCount;
+                }
+                int costDifference = cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]); 
+                costDifference += cities[solution[jPred]][solution[i]]; //citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+                costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+                costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+                return costDifference;
+            }
+            unsigned jSucc = (j + 1) % cityCount, jPred = (j - 1) % cityCount,
+                    iSucc = (i + 1) % cityCount, iPred = (i - 1) % cityCount;
+
+            if (jPred < 0)
+            {
+                jPred += cityCount;
+            }
+            if (iPred < 0)
+            {
+                iPred += cityCount;
+            }
+
+            int costDifference = cities[solution[i]][solution[jSucc]];//citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
+            costDifference += cities[solution[jPred]][solution[i]];//citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+
+            costDifference += cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]);
+            costDifference += cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+
+            costDifference -= cities[solution[j]][solution[jSucc]]; //citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
+            costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+            costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+            costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+
+            return costDifference; 
+        }
+
+        inline int swapAsymmetricMeasurement(unsigned i, unsigned j)
+        {
+            if (!j && i == cityCount - 1)
+            {
+                unsigned iPred = (i - 1) % cityCount; 
+                int costDifference = cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
+                costDifference += cities[solution[i]][solution[1]]; //citiesDistance(cities[solution[i]], cities[solution[1]]);
+                costDifference -= cities[solution[i]][solution[j]];
+                costDifference += cities[solution[j]][solution[i]];
+                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+                costDifference -= cities[solution[j]][solution[1]]; //citiesDistance(cities[solution[j]], cities[solution[1]]);
+
+                return costDifference;
+            }
+            if (i == (j + 1) % cityCount)
+            {
+                unsigned iSucc = (i + 1) % cityCount, jPred = (j - 1) % cityCount; 
+                if (jPred < 0)
+                {
+                    jPred += cityCount;
+                }
+                int costDifference = cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]); 
+                costDifference += cities[solution[jPred]][solution[i]]; //citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+                costDifference -= cities[solution[i]][solution[j]];
+                costDifference += cities[solution[j]][solution[i]];
+                costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+                costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+                return costDifference;
+            }
+
+            //TODO check if ok
+            unsigned jSucc = (j + 1) % cityCount, jPred = (j - 1) % cityCount,
+                    iSucc = (i + 1) % cityCount, iPred = (i - 1) % cityCount;
+
+            if (jPred < 0)
+            {
+                jPred += cityCount;
+            }
+            if (iPred < 0)
+            {
+                iPred += cityCount;
+            }
+
+            int costDifference = cities[solution[i]][solution[jSucc]];//citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
+            costDifference += cities[solution[jPred]][solution[i]];//citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+
+            costDifference += cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]);
+            costDifference += cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+
+            costDifference -= cities[solution[j]][solution[jSucc]]; //citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
+            costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+
+            costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
+            costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+
+            return costDifference; 
+        }
+
+        inline std::vector<std::pair<unsigned, unsigned>> swapNeighboorhood()
+        {
+            std::vector<std::pair<unsigned, unsigned>> res;
+
+            for (unsigned i = 1; i < cityCount; i++)
+            {
+                for (unsigned j = 0; j < i; j++)
+                {
+                    res.push_back(std::make_pair(i, j));
+                }
+            }
+
+            return res;
         }
 
         void solve2OptSymmetric() 
@@ -1034,6 +1410,10 @@ class MatrixTSPInstance
         int objectiveFunction()
         {
             int result = 0;
+            if (solution.size() != cityCount)
+            {
+                std::cout << "ALERT SOME CITIES ARE MISSING FROM SOLUTION" << std::endl;
+            }
             for (unsigned long i = 0; i < solution.size() - 1; i++)
             {
                 result += cities[solution[i]][solution[i + 1]];
@@ -1365,13 +1745,4 @@ class MatrixTSPInstance
                 free(cities);
             }
         }
-
-        inline void symmetricInvert(unsigned i, unsigned j) {
-            for (unsigned m = 1; m < (i - j) / 2 + 1; m++) {
-            unsigned tmp = solution[j + m];
-            solution[j + m] = solution[i - (m - 1)];
-            solution[i - (m - 1)] = tmp;
-            }
-        }
-
 };
