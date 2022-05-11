@@ -1,7 +1,6 @@
 COMPILER = g++
 
 MORPHOLOGICA_PATH = /home/kacper/semestr6/metaheurystyczne/l1/build/morphologica
-#MORPHOLOGICA_PATH = /home/jakub/University/morphologica-main
 
 SHARED_LIBS = /usr/lib/x86_64-linux-gnu/libglfw.so.3.3 /usr/lib/x86_64-linux-gnu/libOpenGL.so /usr/lib/x86_64-linux-gnu/libfreetype.so /usr/lib/x86_64-linux-gnu/libGLX.so /usr/lib/x86_64-linux-gnu/libhdf5_cpp.so.103 /usr/lib/x86_64-linux-gnu/libhdf5_serial.so
 
@@ -35,4 +34,4 @@ experiments:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testExperiments testExperiments.cpp $(SHARED_LIBS)
 
 clean:
-	rm -f testVisual testLoad testSave testExperiments testTabu tabuExperiments
+	rm -f testVisual testLoad testSave testExperiments testTabu
