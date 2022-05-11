@@ -702,7 +702,7 @@ class MatrixTSPInstance
             // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt() 
+        void solve2Opt(const bool symmetric)
         {
             if (symmetric)
                 return solve2OptSymmetric();
