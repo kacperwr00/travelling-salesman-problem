@@ -1,4 +1,5 @@
 #include "TabuList.hpp"
+#include "MatrixTSPInstance.hpp"
 #include "EuclideanTSPInstance.hpp"
 
 int main()
@@ -23,10 +24,10 @@ int main()
     std::cout << "MATRIX" << std::endl;
     MatrixTSPInstance matrixTspInstance;
     matrixTspInstance.randomInstance(clock(), 90, false);
-    matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::invert,
+    matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert,
                                  &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
 
-    matrixTspInstance.randomInstance(clock(), 90, true);
+    matrixTspInstance.randomInstance(clock(), 90, false);
     matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::swap,
                                  &MatrixTSPInstance::swapNeighboorhood, &MatrixTSPInstance::swapMeasurement);
 

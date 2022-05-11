@@ -11,10 +11,10 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
+#include <stack>
 
 #define CITY_LIMIT 150
 #define BUFSIZE 2048
-
 
 // SPRAWOZDANIE:
 // pomijamy wprowadzenie itp.; sekcja experimental results, krótka notatka nt złożoności obliczeniowej
@@ -40,7 +40,7 @@ class MatrixTSPInstance
         typedef void (MatrixTSPInstance::*moveFunction)(unsigned i, unsigned j);
         typedef int (MatrixTSPInstance::*measureFunction)(unsigned i, unsigned j);
         typedef std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*neighboorhoodFunction)();
-        typedef void (MatrixTSPInstance::*startingSolution)(bool visualization);
+        typedef void (MatrixTSPInstance::*startingSolution)();
 
     public:
         // ALGORYTMY HEURYSTYCZNE:
@@ -718,7 +718,7 @@ class MatrixTSPInstance
             TabuList tabuList(listLength, cityCount, symmetric);
 
             //get starting position
-            (this->*solver)(false);
+            (this->*solver)();
             // solveKRandom(1, clock(), false);
             
             //initialize longtermList
