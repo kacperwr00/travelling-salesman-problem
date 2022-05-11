@@ -37,6 +37,26 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
             &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
             std::cout << euclInstance.objectiveFunction() << ",";
 
+            //aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 7
+            euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, true, &EuclideanTSPInstance::solveNearestNeighboor, &EuclideanTSPInstance::symmetricInvert, 
+            &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
+            std::cout << euclInstance.objectiveFunction() << ",";
+
+            //no aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 7
+            euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, false, &EuclideanTSPInstance::solveNearestNeighboor, &EuclideanTSPInstance::symmetricInvert, 
+            &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
+            std::cout << euclInstance.objectiveFunction() << ",";
+
+            //no aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 35
+            euclInstance.solveTabuSearch(35, CLOCKS_PER_SEC * timeLimit, false, false, false, &EuclideanTSPInstance::solveNearestNeighboor, &EuclideanTSPInstance::symmetricInvert, 
+            &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
+            std::cout << euclInstance.objectiveFunction() << ",";
+
+            //aspiration, invertNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 13
+            euclInstance.solveTabuSearch(13, CLOCKS_PER_SEC * timeLimit, false, false, true, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricInvert, 
+            &EuclideanTSPInstance::symmetricInvertNeighboorhood, &EuclideanTSPInstance::invertAcceleratedMeasurement);
+            std::cout << euclInstance.objectiveFunction() << ",";
+
             //aspiration, swapNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 7
             euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, true, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricInsert, 
             &EuclideanTSPInstance::symmetricInsertNeighboorhood, &EuclideanTSPInstance::insertAcceleratedMeasurement);
@@ -66,18 +86,35 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
                     matInstance.loadTSPLIB("../../ALL_tsp/dantzig42.tsp");
                     break;
                 default:    
-                    matInstance.randomInstance(seed, ((i - 2) * 2 - 1) * baseCityCount, false);
+                    matInstance.randomInstance(seed, (i - 2) * baseCityCount, false);
                     break;
             }
-
-
-            //TODO: WE HAVE TO CHANGE NEIGHBOORHOODS / MOVES NAMES TO THE ONES THAT ARE HOPEFULLY ALMOST DONE!!!!!
 
             //output format: timeLimit, instanceNumber, instanceCityCount, firstVariantResult, secondVariantResult, ...
             std::cout << timeLimit << "," << instanceCountOfEachType + i << "," << matInstance.getCityCount() << ",";
             
             // //aspiration, invertNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 7
             matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+            std::cout << matInstance.objectiveFunction() << ",";
+
+            //aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 7
+            matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+            std::cout << matInstance.objectiveFunction() << ",";
+
+            //no aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 7
+            matInstance.solveTabuSearch(7, CLOCKS_PER_SEC * timeLimit, false, false, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+            std::cout << matInstance.objectiveFunction() << ",";
+
+            //no aspiration, invertNeighboorhood, start z najbliższego sąsiada, czas timeLimit, długość listy Tabu = 35
+            matInstance.solveTabuSearch(35, CLOCKS_PER_SEC * timeLimit, false, false, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert, 
+            &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
+            std::cout << matInstance.objectiveFunction() << ",";
+
+            //aspiration, invertNeighboorhood, start z 2-opta, czas timeLimit, długość listy Tabu = 13
+            matInstance.solveTabuSearch(13, CLOCKS_PER_SEC * timeLimit, false, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::invert, 
             &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
             std::cout << matInstance.objectiveFunction() << ",";
 
@@ -101,7 +138,9 @@ void runExperiment1(int instanceCountOfEachType, int seed, int baseCityCount, st
 
 int main()
 {
-    runExperiment1(7, 12345, 567, {3, 4, 5});
+    runExperiment1(8, 123, 75, {5});
+    runExperiment1(4, 123, 75, {15, 30});
+
 
     return 0;
 }
