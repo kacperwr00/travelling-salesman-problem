@@ -32,6 +32,11 @@ class MatrixTSPInstance
         unsigned max2OptIterations = 1000;
         bool symmetric = false;
 
+        //        std::pair<int, int>* cities;
+        //ms; around 17ms are added to wait for user input
+        unsigned targetVisualizationDelay = 300;
+        int** citiesCached;
+
         typedef void (MatrixTSPInstance::*moveFunction)(unsigned i, unsigned j);
         typedef int (MatrixTSPInstance::*measureFunction)(unsigned i, unsigned j);
         typedef std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*neighboorhoodFunction)();
@@ -697,11 +702,172 @@ class MatrixTSPInstance
             // std::cout << "NNearest Neighboor result: " << bestResult << std::endl;
         }
 
-        void solve2Opt() 
+        void solve2Opt(const bool withVisualization)
         {
+            //todo visualization
             if (symmetric)
                 return solve2OptSymmetric();
             solve2OptNonSymmetric();
+        }
+
+        void solveTabuSearch(const int listLength, const clock_t timeLimit, const bool verbose, const bool withVisualization, const bool aspiration, const bool symmetric,
+                         startingSolution solver, moveFunction move, neighboorhoodFunction neighboors, measureFunction measure)
+        {
+            clock_t finishTimestamp = clock() + timeLimit;
+
+            TabuList tabuList(listLength, cityCount, symmetric);
+
+            //get starting position
+            (this->*solver)(false);
+            // solveKRandom(1, clock(), false);
+
+            //initialize longtermList
+            std::stack<std::pair<TabuList, morph::vVector<unsigned>>> longtermList;
+            longtermList.push(std::make_pair(tabuList, solution));
+            bool toBanLongterm = true;
+
+            morph::vVector<unsigned> bestSolution = solution;
+            int currentCost = objectiveFunction();
+            int bestCost = currentCost;
+
+            unsigned iterationsWithoutImprovement = 0;
+            long unsigned iterationCount = 0;
+
+            if (verbose)
+                std::cout << "Before Tabu: " << currentCost << std::endl;
+
+            while (clock() < finishTimestamp)
+            {
+                std::pair<int, int> bestMove = std::make_pair(-1, -1);
+                int bestDifference = INT_MAX;
+
+                for (auto neighboor: (this->*neighboors)())
+                {
+                    unsigned i = neighboor.first, j = neighboor.second;
+
+                    //kryterium aspiracji - bez niego measure wepchnac do drugiego ifa, a pierwszego usunac
+                    if (aspiration)
+                    {
+                        int costDifference = (this->*measure)(i, j);
+
+                        //if the best - don't even check if it is on tabu list
+                        if (currentCost + costDifference < bestCost)
+                        {
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
+                        }
+                        else if (tabuList.checkMoveLegal(i, j))
+                        {
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (tabuList.checkMoveLegal(i, j))
+                        {
+                            int costDifference = (this->*measure)(i, j);
+                            if (costDifference < bestDifference)
+                            {
+                                bestDifference = costDifference;
+                                bestMove = std::make_pair(i, j);
+                            }
+                        }
+                    }
+                }
+
+                if (bestDifference < INT_MAX)
+                {
+                    currentCost += bestDifference;
+                    iterationCount++;
+
+                    if (toBanLongterm)
+                    {
+                        toBanLongterm = false;
+
+                        longtermList.top().first.addMoveToTabu(bestMove.first, bestMove.second);
+                    }
+
+                    if (currentCost < bestCost)
+                    {
+                        // if (currentCost < objectiveFunction())
+                        // {
+                        //     std::cout << "ALERT " << bestMove.first << " " << bestMove.second << " " << iterationCount << " costDifference: " << bestDifference << " actual: " << currentCost - objectiveFunction() << std::endl;
+                        // }
+                        bestCost = currentCost;
+                        bestSolution = solution;
+
+                        iterationsWithoutImprovement = 0;
+
+                        //TODO: save for longterm list here
+                        toBanLongterm = true;
+
+                        longtermList.push(std::make_pair(tabuList, solution));
+                    }
+                    else
+                    {
+                        iterationsWithoutImprovement++;
+
+                        if (iterationsWithoutImprovement == ((unsigned)sqrt(iterationCount) + (cityCount >> 1)))
+                        {
+                            //TODO: kick or restore from longterm list
+                            if (longtermList.empty())
+                            {
+                                //nothing on longterm list kick instead
+                                // std::cout << "Starting a kick " << iterationCount << std::endl;
+                                iterationsWithoutImprovement = 0;
+
+                                //deterministc but maybe random looking kick?
+                                for (unsigned index = (((iterationsWithoutImprovement << 1) + iterationCount) % cityCount) >> 2;
+                                     index < cityCount; index += 7)
+                                {
+                                    symmetricInvert(index, index - (index & 13));
+                                }
+
+                                currentCost = objectiveFunction();
+                                // do
+                                // {
+                                //     solveKRandom(1, iterationCount, false);
+                                // } while (clock() < finishTimestamp && objectiveFunction() > 4 * bestCost);
+                                // std::cout << "Finished a kick" << std::endl;
+
+                            }
+                            else
+                            {
+                                auto restored = longtermList.top();
+                                longtermList.pop();
+
+                                tabuList = restored.first;
+                                solution = restored.second;
+                                currentCost = objectiveFunction();
+
+                                // std::cout << "KICKING RN " << iterationCount << std::endl;
+
+                                iterationsWithoutImprovement = 0;
+                            }
+                        }
+                    }
+                    tabuList.addMoveToTabu(bestMove.first, bestMove.second);
+
+                    (this->*move)(bestMove.first, bestMove.second);
+                }
+                else
+                {
+                    std::cout << "STUCK " << iterationCount << std::endl;
+                }
+            }
+            solution = bestSolution;
+
+            if (verbose)
+                std::cout << "After Tabu: " << objectiveFunction() << std::endl;
+
+            tabuList.deleteList();
         }
 
         void solve2OptSymmetric() 
@@ -1199,4 +1365,13 @@ class MatrixTSPInstance
                 free(cities);
             }
         }
+
+        inline void symmetricInvert(unsigned i, unsigned j) {
+            for (unsigned m = 1; m < (i - j) / 2 + 1; m++) {
+            unsigned tmp = solution[j + m];
+            solution[j + m] = solution[i - (m - 1)];
+            solution[i - (m - 1)] = tmp;
+            }
+        }
+
 };
