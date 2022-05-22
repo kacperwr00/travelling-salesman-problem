@@ -31,10 +31,18 @@ class EuclideanTSPInstance
         unsigned max2OptIterations = 1000;
         int** citiesCached;
 
+        //tabu utility functions
         typedef void (EuclideanTSPInstance::*moveFunction)(unsigned i, unsigned j);
         typedef int (EuclideanTSPInstance::*measureFunction)(unsigned i, unsigned j);
         typedef std::vector<std::pair<unsigned, unsigned>> (EuclideanTSPInstance::*neighboorhoodFunction)();
         typedef void (EuclideanTSPInstance::*startingSolution)(bool visualization);
+
+        //genetic utility functions
+        //TODO arguments
+        typedef std::vector<morph::vVector<unsigned>> (EuclideanTSPInstance::*getStartingPopulation)(long unsigned);
+        typedef morph::vVector<unsigned> (EuclideanTSPInstance::*mutationFunction)(morph::vVector<unsigned>);
+        typedef morph::vVector<unsigned> (EuclideanTSPInstance::*breedFunction)(morph::vVector<unsigned>, morph::vVector<unsigned>);
+
 
     public:
         unsigned getCityCount()
@@ -1124,6 +1132,113 @@ class EuclideanTSPInstance
 
             return res;
         }
+
+
+        /**
+         * GENETIC ALGORITHM
+         */
+
+        void solveGenetic(const clock_t timeLimit, const bool verbose, double selectionTreshold, 
+                    getStartingPopulation getStarting, mutationFunction mutate, breedFunction breed, bool symmetricBreeding)
+        {
+            const clock_t deadline = clock() + timeLimit; 
+            // START -> Populacja początkowa -> Ewaluacja i selekcja -> Krzyżowanie -> Mutacja -> Zapętlenie albo STOP
+            
+            //populacja początkowa
+            std::vector<morph::vVector<unsigned>> population = (this->*getStarting)(13);
+            morph::vVector<unsigned> bestSolution = solution;
+            
+
+            while (clock() < deadline)
+            {
+                //ewaluacja
+                std::vector<int> populationObjectiveFunction;
+                //do urownoleglenia:
+                // std::vector<int> populationObjectiveFunction(population.size(), -1);
+
+                int minObjectiveValue = INT_MAX, minIndex = -1;
+                for (long unsigned i = 0; i < population.size(); i++)
+                {
+                    //do urownoleglenia [i] zamiast push back i objectiveFunction z argumentu
+                    solution = population[i];
+                    int tmp = objectiveFunction();
+                    populationObjectiveFunction.push_back(tmp);
+
+                    //#pragma omp critical
+                    if (tmp < minObjectiveValue)
+                    {
+                        minObjectiveValue = tmp;
+                        minIndex = i;
+                    }
+                }
+
+                //selekcja
+                int maxAllowed = selectionTreshold * minObjectiveValue;
+                for (long unsigned i = population.size() - 1; i >= 0; i++)
+                {
+                    if (populationObjectiveFunction[i] > maxAllowed)
+                    {
+                        populationObjectiveFunction.erase(populationObjectiveFunction.begin() + i);
+                        population.erase(population.begin() + i);
+                    }
+                }
+
+                //krzyżowanie
+                int bnd = population.size();
+                for (int i = 0; i < bnd; i++)
+                {
+                    for (int j = 0; j < bnd; j++)
+                    {
+                        //
+                        if (i == j)
+                        {
+                            if (symmetricBreeding)
+                                break;
+                            else
+                                continue;
+                        }
+
+                        population.push_back((this->*breed)(population[i], population[j]));
+                    }   
+                }
+
+                //mutacja
+                for (long unsigned i = 0; i < population.size(); i++)
+                {
+                    population[i] = (this->*mutate)(population[i]);
+                }
+            }
+        }
+
+
+        std::vector<morph::vVector<unsigned>> startingPopulation(long unsigned populationSize)
+        {
+            std::vector<morph::vVector<unsigned>> result;
+
+            //TODO: #pragma omp for
+            for (long unsigned i = 0; i < populationSize; i++)
+            {
+                //TODO: magic numbers (it's not like anyone will notice)
+                solveKRandom(1000, 123, false);
+                result.push_back(solution);
+            }
+
+            return result;
+        }
+
+        morph::vVector<unsigned> mutation(morph::vVector<unsigned> input)
+        {
+            return input;
+        }
+
+        morph::vVector<unsigned> breed(morph::vVector<unsigned> first, morph::vVector<unsigned> second)
+        {
+            return first;
+        }
+
+        /**
+         * UTILS
+         */
 
         void loadTSPLIB(const char* fileName) 
         {

@@ -11,18 +11,21 @@ COMPILER_REQ_FLAGS = -D__GLN__ -DGL3_PROTOTYPES -DGL_GLEXT_PROTOTYPES -DMORPH_FO
 
 REQUIRED_INCLUDES = -I$(MORPHOLOGICA_PATH) -I$(MORPHOLOGICA_PATH)/include -isystem /usr/include/jsoncpp -isystem /usr/include/freetype2 -isystem /usr/include/hdf5/serial 
 
-.PHONY = all debug visual experiments clean tabu test
+.PHONY = all debug visual experiments clean tabu test genetic
 
 all: 
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual testVisual.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testLoad testLoad.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testSave testSave.cpp $(SHARED_LIBS)
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testTabu testTabu.cpp $(SHARED_LIBS)
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testGenetic testGenetic.cpp $(SHARED_LIBS)
 
 debug:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testVisual testVisual.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testLoad testLoad.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testSave testSave.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testTabu testTabu.cpp $(SHARED_LIBS)
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testGenetic testGenetic.cpp $(SHARED_LIBS)
 
 visual:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testVisual testVisual.cpp $(SHARED_LIBS)
@@ -31,8 +34,11 @@ tabu:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testTabu testTabu.cpp $(SHARED_LIBS)
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o tabuExperiments tabuExperiments.cpp $(SHARED_LIBS)
 
+genetic:
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testGenetic testGenetic.cpp $(SHARED_LIBS)
+
 experiments:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testExperiments testExperiments.cpp $(SHARED_LIBS)
 
 clean:
-	rm -f testVisual testLoad testSave testExperiments testTabu tabuExperiments
+	rm -f testVisual testLoad testSave testExperiments testTabu tabuExperiments tabuExperiments
