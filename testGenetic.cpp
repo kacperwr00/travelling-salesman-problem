@@ -6,18 +6,17 @@ int main()
 {
     // std::cout << "EUCL" << std::endl;
     EuclideanTSPInstance euclInstance;
-    euclInstance.randomInstance(clock(), 700);
-    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, true, 1.1, &EuclideanTSPInstance::startingPopulation, &EuclideanTSPInstance::mutation, 
-        &EuclideanTSPInstance::breed, true);
-    // euclInstance.randomInstance(clock(), 700);
-    // euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, false, false, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricSwap, 
-    //     &EuclideanTSPInstance::symmetricSwapNeighboorhood, &EuclideanTSPInstance::swapAcceleratedMeasurement);
+    euclInstance.randomInstance(123, 700);
+    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 5, &EuclideanTSPInstance::startingPopulation, &EuclideanTSPInstance::mutation, 
+        &EuclideanTSPInstance::crossover, true);
 
+    std::cout << "Dla porównania 2-opt: \n";
+    euclInstance.solve2Opt(false);
+    std::cout << euclInstance.objectiveFunction() << std::endl;
 
-    // euclInstance.randomInstance(clock(), 700);
-    // euclInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, false, true, &EuclideanTSPInstance::solve2Opt, &EuclideanTSPInstance::symmetricInsert, 
-    //     &EuclideanTSPInstance::symmetricInsertNeighboorhood, &EuclideanTSPInstance::insertAcceleratedMeasurement);
-
+    std::cout << "Dla porównania Krandom(cityCount): \n";
+    euclInstance.solveKRandom(euclInstance.getCityCount(), 123, false);
+    std::cout << euclInstance.objectiveFunction() << std::endl;
 
     euclInstance.deleteInstance();
 
@@ -28,19 +27,6 @@ int main()
     //         matrixTspInstance.solveTabuSearch(35, CLOCKS_PER_SEC * 5, false, false, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert, 
     //         &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
     //         std::cout << matrixTspInstance.objectiveFunction() << ",";
-
-    // matrixTspInstance.randomInstance(clock(), 90, false);
-    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solveNearestNeighboor, &MatrixTSPInstance::invert,
-    //                              &MatrixTSPInstance::invertNeighboorhood, &MatrixTSPInstance::invertMeasurement);
-
-    // matrixTspInstance.randomInstance(clock(), 90, false);
-    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, true, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::swap,
-    //                              &MatrixTSPInstance::swapNeighboorhood, &MatrixTSPInstance::swapMeasurement);
-
-
-    // matrixTspInstance.randomInstance(clock(), 90, false);
-    // matrixTspInstance.solveTabuSearch(7, CLOCKS_PER_SEC * 30, true, false, &MatrixTSPInstance::solve2Opt, &MatrixTSPInstance::insert,
-    //                              &MatrixTSPInstance::insertNeighboorhood, &MatrixTSPInstance::insertMeasurement);
 
 
     // matrixTspInstance.deleteInstance();
