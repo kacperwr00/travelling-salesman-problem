@@ -15,7 +15,6 @@
 #include <cstdlib>
 #include <climits>
 #include <stack>
-#include <omp.h>
 #include "TabuList.hpp"
 
 #define CITY_LIMIT 150
@@ -40,12 +39,14 @@ class EuclideanTSPInstance
 
 
         clock_t geneticSeed = 0;
+        std::mt19937 rng = std::mt19937(geneticSeed);
+
         //genetic utility functions
         //TODO arguments
         typedef std::vector<morph::vVector<unsigned>> (EuclideanTSPInstance::*getStartingPopulation)(unsigned);
-        typedef morph::vVector<unsigned> (EuclideanTSPInstance::*mutationFunction)(morph::vVector<unsigned>);
-        typedef morph::vVector<unsigned> (EuclideanTSPInstance::*crossoverFunction)(morph::vVector<unsigned>, morph::vVector<unsigned>);
-
+        typedef std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*mutationFunction)(const std::pair<int, morph::vVector<unsigned>>);
+        typedef std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*crossoverFunction)(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
+        typedef std::set<std::pair<int, morph::vVector<unsigned>>> (EuclideanTSPInstance::*selectionFunction)(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
 
     public:
         unsigned getCityCount()
@@ -1144,13 +1145,13 @@ class EuclideanTSPInstance
         //each thread gets its own generator, creating distribution every call - its supposed to be fast according to stack overflow
         //each thread uses different seed, however they get it deterministically
         long longRand(const long & min, const long & max, clock_t seed) {
-            static thread_local std::mt19937 generator(seed + omp_get_thread_num());
+            static thread_local std::mt19937 generator(seed);
             std::uniform_int_distribution<long> distribution(min, max);
             return distribution(generator);
         }
 
         void solveGenetic(const clock_t timeLimit, const clock_t seed, const bool verbose, const unsigned populationSize, const unsigned proceedToNextCount, const unsigned eligibleForCrossOverCount,
-                    const getStartingPopulation getStarting, const mutationFunction mutate, const crossoverFunction crossover, const bool symmetricBreeding)
+                    const getStartingPopulation getStarting, const mutationFunction mutate, const crossoverFunction crossover, const selectionFunction naturalSelection)
         {
             if (populationSize < eligibleForCrossOverCount || populationSize < proceedToNextCount)
             {
@@ -1160,10 +1161,11 @@ class EuclideanTSPInstance
 
             const clock_t deadline = clock() + timeLimit; 
             geneticSeed = seed;
+
             // START -> Populacja początkowa -> Ewaluacja i selekcja -> Krzyżowanie -> Mutacja -> Zapętlenie albo STOP
             
             //populacja początkowa
-            std::vector<morph::vVector<unsigned>> population = (this->*getStarting)(populationSize);
+            std::vector<morph::vVector<unsigned>> startingSpecimen = (this->*getStarting)(populationSize);
 
             if (verbose)
             {
@@ -1172,26 +1174,20 @@ class EuclideanTSPInstance
 
             
             //ewaluacja
-            std::vector<int> populationObjectiveFunction;
-            std::set<int> sortedObjectiveFunctions;
+            std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions;
             long objectiveFunctionSum = 0;
-            //do urownoleglenia:
-            // std::vector<int> populationObjectiveFunction(population.size(), -1);
 
-            for (long unsigned i = 0; i < population.size(); i++)
+            for (long unsigned i = 0; i < startingSpecimen.size(); i++)
             {
-                //do urownoleglenia [i] zamiast push back i objectiveFunction z argumentu
-                solution = population[i];
+                solution = startingSpecimen[i];
                 int tmp = objectiveFunction();
-                populationObjectiveFunction.push_back(tmp);
-                sortedObjectiveFunctions.insert(tmp);
+                sortedObjectiveFunctions.insert(std::make_pair(tmp, startingSpecimen[i]));
             }
 
-            std::set<int>::iterator it(sortedObjectiveFunctions.begin());
-            int bestObjectiveValue = *(it);
-                                                                //znajdz indeks osobnika który ma tą najlepszą wartość funkcji celu
-            morph::vVector<unsigned> bestSolution = population[std::find(populationObjectiveFunction.begin(), 
-                    populationObjectiveFunction.end(), *it) - populationObjectiveFunction.begin()];
+            std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
+            int bestObjectiveValue = (*it).first;
+            
+            morph::vVector<unsigned> bestSolution = (*it).second;
                 
             if (verbose)
                 std::cout << "Najlepsze rozwiązanie populacji początkowej ma wartość funkcji celu równą: " << bestObjectiveValue << std::endl; 
@@ -1199,34 +1195,24 @@ class EuclideanTSPInstance
 
             for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
             {
-                objectiveFunctionSum += *(it++);
-            }
-            int firstNonEligibleObjectiveFunction = *it;
+                objectiveFunctionSum += (*it).first;
 
-            
+            }
+            int firstNonEligibleObjectiveFunction = (*it).first;
+
 
             int iterationCounter = 0;
 
-            while (clock() < deadline)// && iterationCounter < 10)
+            while (clock() < deadline)
             {
                 if (verbose)
+                {
                     iterationCounter++;
-                // std::cout << " Iteration " << iterationCounter++ << " best solution: " << *(sortedObjectiveFunctions.begin()) << std::endl;
-
-                //selekcja
-                // int maxAllowed = selectionTreshold * minObjectiveValue;
-                // for (long unsigned i = population.size() - 1; i >= 0; i++)
-                // {
-                //     if (populationObjectiveFunction[i] > maxAllowed)
-                //     {
-                //         populationObjectiveFunction.erase(populationObjectiveFunction.begin() + i);
-                //         population.erase(population.begin() + i);
-                //     }
-                // }
+                    // std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
+                }
 
                 //KRZYŻOWANIE
                 //wybierz POPULATION_SZIE - PROCEEDS par osobników 
-                //z ELIGBLE_FOR_CROSSOVER najlepszych rozwiązań z poprzedniej generacji do krżyżowania
                 
                 //będziemy losować osobniki z prawdopodobieństwem wprost proporcjonalnym do róznicy 
                 //wartości funkcji celu między i-tym a pierwszym non-eligible
@@ -1241,13 +1227,12 @@ class EuclideanTSPInstance
                     long chosen = longRand(0, total - 1, geneticSeed);
                     unsigned first = 0;
 
-                    std::set<int>::iterator it(sortedObjectiveFunctions.begin());
+                    std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
                     for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
                     {
-                        if ((chosen -= *(it)) <= 0)
+                        if ((chosen -= (*it).first) <= 0)
                         {   
-                            first = std::find(populationObjectiveFunction.begin(), 
-                                        populationObjectiveFunction.end(), *it) - populationObjectiveFunction.begin();
+                            first = std::distance(it, sortedObjectiveFunctions.begin());
                             break;
                         }
                         it++;
@@ -1258,10 +1243,9 @@ class EuclideanTSPInstance
                     it = sortedObjectiveFunctions.begin();
                     for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
                     {
-                        if ((chosen -= *(it)) <= 0)
+                        if ((chosen -= (*it).first) <= 0)
                         {   
-                            selectedPairs.push_back(std::make_pair(first, std::find(populationObjectiveFunction.begin(), 
-                                           populationObjectiveFunction.end(), *it) - populationObjectiveFunction.begin()));
+                            selectedPairs.push_back(std::make_pair(first, std::distance(it, sortedObjectiveFunctions.begin())));
                             break;
                         }
                         it++;
@@ -1269,57 +1253,48 @@ class EuclideanTSPInstance
                 }
 
                 //krzyżujemy
-                auto iterator = population.begin() + proceedToNextCount;
+                auto start = sortedObjectiveFunctions.begin();
+                std::vector<std::pair<int, morph::vVector<unsigned>> > children;
+
                 for (auto selectedPair: selectedPairs)
                 {
-                    if (selectedPair.first >= populationSize || selectedPair.second >= populationSize || selectedPair.first < 0 || selectedPair.second < 0)
-                        printf("WRONG PAIR WAS GENERATED %d %d\n", selectedPair.first, selectedPair.second);
-                    population.emplace(iterator, (this->*crossover)(population[selectedPair.first], population[selectedPair.second]));
+                    auto first = start, second = start;
+                    std::advance(first, selectedPair.first);
+                    std::advance(second, selectedPair.second);
+                    
+                    children.push_back((this->*crossover)(*first, *second));
                 }
+
                 //uśmiercamy za słabe osobniki
-                //w population jest PROCEEDED | CROSSOVERED | reszta do odcięcia
-                population.resize(populationSize);
+                sortedObjectiveFunctions = (this->*naturalSelection)(sortedObjectiveFunctions, proceedToNextCount);
+
+                //dodajemy dzieci do populacji       
+                for (auto child: children)
+                {
+                    sortedObjectiveFunctions.insert(child);
+                }         
 
                 //mutacja
-                for (long unsigned i = 0; i < population.size(); i++)
+                for (it = sortedObjectiveFunctions.begin(); it != sortedObjectiveFunctions.end(); )//std::advance(it, 1))
                 {
-                    population[i] = (this->*mutate)(population[i]);
+                    auto mutationResult = (this->*mutate)(*it);
+                    it = sortedObjectiveFunctions.erase(it);
+                    sortedObjectiveFunctions.insert(mutationResult);
                 }
 
-                //ponowna ewaluacja
-                //TODO: usprawnienie - AKCELERACJA
-                populationObjectiveFunction.resize(population.size());
-                std::fill(populationObjectiveFunction.begin(), populationObjectiveFunction.end(), INT_MAX);
-                sortedObjectiveFunctions.clear();
-                objectiveFunctionSum = 0;
-
-                //do urownoleglenia:
-                // std::vector<int> populationObjectiveFunction(population.size(), -1);
-
-                for (long unsigned i = 0; i < population.size(); i++)
+                it = sortedObjectiveFunctions.begin();
+                if ((*it).first < bestObjectiveValue)
                 {
-                    //do urownoleglenia [i] zamiast push back i objectiveFunction z argumentu
-                    solution = population[i];
-                    int tmp = objectiveFunction();
-
-                    populationObjectiveFunction[i] = tmp;
-                    sortedObjectiveFunctions.insert(tmp);
-                }
-
-                std::set<int>::iterator it(sortedObjectiveFunctions.begin());
-                if (*it < bestObjectiveValue)
-                {
-                    bestObjectiveValue = *it;
-                                                //znajdz indeks osobnika który ma tą najlepszą wartość funkcji celu
-                    bestSolution = population[std::find(populationObjectiveFunction.begin(), 
-                                           populationObjectiveFunction.end(), *it) - populationObjectiveFunction.begin()];
+                    bestObjectiveValue = (*it).first;
+                    bestSolution = (*it).second;
                 }
 
                 for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
                 {
-                    objectiveFunctionSum += *(it++);
+                    objectiveFunctionSum += (*it).first;
+                    it++;
                 }
-                firstNonEligibleObjectiveFunction = *it;
+                firstNonEligibleObjectiveFunction = (*it).first;
             }
 
             solution = bestSolution;
@@ -1335,42 +1310,48 @@ class EuclideanTSPInstance
         {
             std::vector<morph::vVector<unsigned>> result;
 
-            //TODO: #pragma omp for
             for (long unsigned i = 0; i < populationSize; i++)
             {
-                solveKRandom(cityCount, geneticSeed + i, false);
+                solveKRandom(cityCount * 5, geneticSeed + i, false);
                 result.push_back(solution);
             }
 
             return result;
         }
 
-        morph::vVector<unsigned> mutation(morph::vVector<unsigned> input)
-        {
-            // std::random_device randomDevice;
-            // std::mt19937 rng(randomDevice);
-            // std::uniform_int_distribution<unsigned> dist(0, 100);
 
-            // unsigned rolled = longRand(0, 100, geneticSeed);//dist(rng);
+        std::pair<int, morph::vVector<unsigned>> mutation(const std::pair<int, morph::vVector<unsigned>> inputSolution)
+        {
+            auto input = inputSolution.second;
+            auto inputValue = inputSolution.first;
 
             while (longRand(0, 100, geneticSeed) > 10)
             {
-                std::swap(input[longRand(0, cityCount - 1, geneticSeed)], input[longRand(0, cityCount - 1, geneticSeed)]);
-                // input.swap(longRand(0, cityCount, geneticSeed), longRand(0, cityCount, geneticSeed));
+                unsigned long i = longRand(1, cityCount - 2, geneticSeed), j = longRand(1, cityCount - 2, geneticSeed);
+                if (labs(j - i) > 2)// && )
+                {
+                    const unsigned jSucc = (j + 1), jPred = (j - 1), iSucc = (i + 1), iPred = (i - 1);
+                    inputValue += citiesDistance(cities[input[i]], cities[input[jSucc]]); 
+                    inputValue += citiesDistance(cities[input[jPred]], cities[input[i]]);
+
+                    inputValue += citiesDistance(cities[input[j]], cities[input[iSucc]]);
+                    inputValue += citiesDistance(cities[input[iPred]], cities[input[j]]);
+
+                    inputValue -= citiesDistance(cities[input[j]], cities[input[jSucc]]);
+                    inputValue -= citiesDistance(cities[input[jPred]], cities[input[j]]);
+
+                    inputValue -= citiesDistance(cities[input[i]], cities[input[iSucc]]);
+                    inputValue -= citiesDistance(cities[input[iPred]], cities[input[i]]);
+                    
+                    std::iter_swap(input.begin() + i, input.begin() + j);
+                }
             }
 
-
-            return input;
+            return std::make_pair(inputValue, input);
         }
 
-        morph::vVector<unsigned> crossover(morph::vVector<unsigned> first, morph::vVector<unsigned> second)
+        std::pair<int, morph::vVector<unsigned>> crossover(std::pair<int, morph::vVector<unsigned>> first, std::pair<int, morph::vVector<unsigned>> second)
         {
-            if (cityCount <= 1 || first.size() != getCityCount() || second.size() != getCityCount())
-            {
-                printf("CROSSOVER ARGUMENTS ILLEGAL\n");
-                return first;
-            }
-
             //wybierz jakiś losowy przedział na second
             //TODO: jakieś przyjemniejsze to losowanie by się przydało
             unsigned i = longRand(0, cityCount - 1, geneticSeed), j;
@@ -1384,28 +1365,66 @@ class EuclideanTSPInstance
                 std::swap(i, j);
             }
 
-            std::mt19937 rng(geneticSeed);
 
             //spermutuj tą część second
-            std::shuffle(second.begin() + i, second.begin() + j, rng);
+            std::shuffle(second.second.begin() + i, second.second.begin() + j - 1, rng);
 
             //usuń te wartości z pierwszego
             for (unsigned k = i; k < j; k++)
             {    
-                first.erase(std::find(first.begin(), first.end(), second[k]));
+                auto toBeDeleted = std::find(first.second.begin(), first.second.end(), second.second[k]);
+                
+                if ((toBeDeleted != first.second.begin()) && (toBeDeleted != first.second.end() - 1))
+                {
+                    first.first -= citiesDistance(cities[*(toBeDeleted - 1)], cities[*toBeDeleted]);
+                    first.first -= citiesDistance(cities[*toBeDeleted], cities[*(toBeDeleted + 1)]);
+                    first.first += citiesDistance(cities[*(toBeDeleted - 1)], cities[*(toBeDeleted + 1)]);
+                }
+                else if (toBeDeleted == first.second.begin())
+                {
+                    first.first -= citiesDistance(cities[*(first.second.end() - 1)], cities[*toBeDeleted]);
+                    first.first -= citiesDistance(cities[*toBeDeleted], cities[*(toBeDeleted + 1)]);
+                    first.first += citiesDistance(cities[*(first.second.end() - 1)], cities[*(toBeDeleted + 1)]);
+                }
+                else 
+                {
+                    first.first -= citiesDistance(cities[*(toBeDeleted - 1)], cities[*toBeDeleted]);
+                    first.first -= citiesDistance(cities[*toBeDeleted], cities[*(first.second.begin())]);
+                    first.first += citiesDistance(cities[*(toBeDeleted - 1)], cities[*(first.second.begin())]);
+                }
+                first.second.erase(toBeDeleted);
             }
 
-            //wstaw spermutowaną część drugiego do pierwszego
+            //wstaw spermutowaną część drugiego na koniec pierwszego
+            int index = first.second.size() - 1;
+            first.first -= citiesDistance(cities[*(first.second.begin() + index)], cities[*(first.second.begin())]);
             for (unsigned k = i; k < j; k++)
             {
-                first.push_back(second[k]);
+                auto value = *(second.second.begin() + k);
+                first.second.push_back(value);
+                first.first += citiesDistance(cities[*(first.second.begin() + index++)], cities[value]);
             }
-
-            if (first.size() != getCityCount())
-                printf("CROSSOVER FAILED\n");
+            first.first += citiesDistance(cities[*(first.second.begin() + index)], cities[*(first.second.begin())]);
 
             return first;
         }
+
+        std::set<std::pair<int, morph::vVector<unsigned>>> selection(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
+        {
+            if (proceedToNextCount < population.size())
+            {        
+                auto it = population.begin();
+                std::advance(it, proceedToNextCount);
+                
+                while (population.end() != it)
+                {
+                    it = population.erase(it);
+                }
+            }
+
+            return population;
+        }
+
 
         /**
          * UTILS

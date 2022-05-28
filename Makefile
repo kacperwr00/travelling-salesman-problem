@@ -35,7 +35,7 @@ tabu:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o tabuExperiments tabuExperiments.cpp $(SHARED_LIBS)
 
 genetic:
-	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -g -o testGenetic testGenetic.cpp $(SHARED_LIBS)
+	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testGenetic testGenetic.cpp $(SHARED_LIBS)
 
 experiments:
 	$(COMPILER) $(REQUIRED_INCLUDES) $(COMPILER_REQ_FLAGS) $(COMPILER_SETTINGS) -o testExperiments testExperiments.cpp $(SHARED_LIBS)

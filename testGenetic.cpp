@@ -6,9 +6,9 @@ int main()
 {
     // std::cout << "EUCL" << std::endl;
     EuclideanTSPInstance euclInstance;
-    euclInstance.randomInstance(123, 700);
-    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 5, &EuclideanTSPInstance::startingPopulation, &EuclideanTSPInstance::mutation, 
-        &EuclideanTSPInstance::crossover, true);
+    euclInstance.randomInstance(123, 70);
+    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 10, &EuclideanTSPInstance::startingPopulation, &EuclideanTSPInstance::mutation, 
+        &EuclideanTSPInstance::crossover, &EuclideanTSPInstance::selection);
 
     std::cout << "Dla porównania 2-opt: \n";
     euclInstance.solve2Opt(false);
