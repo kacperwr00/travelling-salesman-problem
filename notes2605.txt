@@ -1,0 +1,77 @@
+
+
+2 + 1 metody generowania początkowej:
+    - losowe osobniki (losowe na różne sposoby) (nie specyficzne dla TSP) (tu mogą być 2 różne metody)
+    - 80% losowo, 20% losowe rozwiązania poprawiane 2-optem - plan minimum
+    - bardziej skomplikowane sposoby na bardzo różne od siebie rozwiązania
+
+2 metody selekcji do krzyzowania
+    - zupelnie losowe
+    - losowe zalezne od funkcji celu
+    - moze jakies lepsze
+
+
+2 elitaryzmy:
+    - podzielenie popuacji na x przedziałów i wzięcie najlepszego z każdego z nich 
+    - nie trzeba wymyslac metod dedykowanych
+
+2 + 1 mutacje:
+    - perturbacje losowe - mniejsze lub większe
+    - może być jedna klasa, ale różne parametry 
+    - invert czy swap losowy wystarczy
+    - nie wszystkie trzeba mutować
+
+    plus jedna zwiazana z TSP
+    - usuwamy część i naprawiamy nearestNeighboorem?
+    
+    - 2 opt na części osobnikow
+
+
+2 + 1 krzyżowania: - mało mówił, te popularne 
+    - krzyżowanie na jednym osobniku (część zostawiamy, resztę nearestNeighboor) - nie polecany, lepiej to wziąć jako mutacje
+    - z literatury sobie wziać
+
+    -- bierzemy dwwoch osobnikow 
+        A 1 2 3 4 5 6
+        B 3 6 1 4 2 5
+
+        losowy start wybieramy - tu 3
+
+        3 
+
+        bierzemy sasiadow 3 w obu rodzicach - 2 4 5 6
+        wybieramy najkrótszą odległość/ najblizszego
+
+        3 5 
+
+        bierzemy jeszcze nie odwiedzonych sąsiadów 5 - 4 6 2
+
+        3 5 2
+
+        dalej kandydaci - 1 6 4 
+
+        3 5 2 6
+
+        lista sąsiadów pusta - bierzemy najblizszy z calej reszty 1 4
+
+
+    - inny wariant - można robić otoczenie 2 - dla dużych instancji
+
+
+
+PROBKOWANIE losowe
+
+1 METODA:
+- jakis baseline - np najprostszy algorytm 
+    - sprawdzamy zachlannie w kolejnych krokach najlepsze zmieniajac po 1 parametrze
+
+2 METODA:
+- dalej 100 konfiguracji losowych parametrów (ewentualnie 50 ice)
+
+-porównujemy najlepszy z pierwszej i drugiej metody np Wilcoxonem
+
+- porównujemy Fridmanem 1xN - 1x12 (z 1. etapu?)
+
+ROZMIAR POPULACJI: moze byc 7, moze byc 70, im wieksza instancja - tym wiecej 
+
+mutacja moze wystepowac tylko u dzieci, i tylko z pewnym prawdopodobienstwem
