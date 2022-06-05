@@ -42,6 +42,17 @@ class MatrixTSPInstance
         typedef std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*neighboorhoodFunction)();
         typedef void (MatrixTSPInstance::*startingSolution)();
 
+                clock_t geneticSeed = 0;
+        std::mt19937 rng = std::mt19937(geneticSeed);
+
+        //genetic utility functions
+        //TODO arguments
+        typedef std::vector<morph::vVector<unsigned>> (MatrixTSPInstance::*getStartingPopulation)(unsigned);
+        typedef std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*mutationFunction)(const std::pair<int, morph::vVector<unsigned>>);
+        typedef std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*crossoverFunction)(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
+        typedef std::set<std::pair<int, morph::vVector<unsigned>>> (MatrixTSPInstance::*selectionFunction)(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
+
+
     public:
         // ALGORYTMY HEURYSTYCZNE:
         // k-random - losujemy k rozwiązań i bierzemy najlepsze
@@ -893,6 +904,315 @@ class MatrixTSPInstance
             tabuList.deleteList();
         }
 
+
+                /** GENETIC ALGORITHM
+         */
+
+        //threadsafe 64 bit int generation
+        //each thread gets its own generator, creating distribution every call - its supposed to be fast according to stack overflow
+        //each thread uses different seed, however they get it deterministically
+        long longRand(const long & min, const long & max, clock_t seed) {
+            static thread_local std::mt19937 generator(seed);
+            std::uniform_int_distribution<long> distribution(min, max);
+            return distribution(generator);
+        }
+
+        void solveGenetic(const clock_t timeLimit, const clock_t seed, const bool verbose, const unsigned populationSize, const unsigned proceedToNextCount, const unsigned eligibleForCrossOverCount,
+                    const getStartingPopulation getStarting, const mutationFunction mutate, const crossoverFunction crossover, const selectionFunction naturalSelection)
+        {
+            if (populationSize < eligibleForCrossOverCount || populationSize < proceedToNextCount)
+            {
+                std::cout << "Illegal arguments. Returning" << std::endl;
+                return;
+            }
+
+            const clock_t deadline = clock() + timeLimit; 
+            geneticSeed = seed;
+
+            // START -> Populacja początkowa -> Ewaluacja i selekcja -> Krzyżowanie -> Mutacja -> Zapętlenie albo STOP
+            
+            //populacja początkowa
+            std::vector<morph::vVector<unsigned>> startingSpecimen = (this->*getStarting)(populationSize);
+
+            if (verbose)
+            {
+                std::cout << "Wygenerowanie populacji początkowej zajęło " << double(clock() - deadline + timeLimit) / CLOCKS_PER_SEC << " sekund." << std::endl; 
+            }
+
+            
+            //ewaluacja
+            std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions;
+            long objectiveFunctionSum = 0;
+
+            for (long unsigned i = 0; i < startingSpecimen.size(); i++)
+            {
+                solution = startingSpecimen[i];
+                int tmp = objectiveFunction();
+                sortedObjectiveFunctions.insert(std::make_pair(tmp, startingSpecimen[i]));
+            }
+
+            std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
+            int bestObjectiveValue = (*it).first;
+            
+            morph::vVector<unsigned> bestSolution = (*it).second;
+                
+            if (verbose)
+                std::cout << "Najlepsze rozwiązanie populacji początkowej ma wartość funkcji celu równą: " << bestObjectiveValue << std::endl; 
+
+
+            for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+            {
+                objectiveFunctionSum += (*it).first;
+
+            }
+            int firstNonEligibleObjectiveFunction = (*it).first;
+
+
+            int iterationCounter = 0;
+
+            while (clock() < deadline)
+            {
+                if (verbose)
+                {
+                    iterationCounter++;
+                    // std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
+                }
+
+                //KRZYŻOWANIE
+                //wybierz POPULATION_SZIE - PROCEEDS par osobników 
+                
+                //będziemy losować osobniki z prawdopodobieństwem wprost proporcjonalnym do róznicy 
+                //wartości funkcji celu między i-tym a pierwszym non-eligible
+                //pomysł na później: do kwadratu tej wartości?
+                std::vector<std::pair<unsigned, unsigned>> selectedPairs;
+                
+                //suma tych różnic w pierwszych eligible polach
+                long total = firstNonEligibleObjectiveFunction * eligibleForCrossOverCount - objectiveFunctionSum;
+
+                for (unsigned iter = 0; iter < populationSize - proceedToNextCount; iter++)
+                {
+                    long chosen = longRand(0, total - 1, geneticSeed);
+                    unsigned first = 0;
+
+                    std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
+                    for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+                    {
+                        if ((chosen -= (*it).first) <= 0)
+                        {   
+                            first = std::distance(it, sortedObjectiveFunctions.begin());
+                            break;
+                        }
+                        it++;
+                    }
+
+                    chosen = longRand(0, total - 1, geneticSeed);
+
+                    it = sortedObjectiveFunctions.begin();
+                    for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+                    {
+                        if ((chosen -= (*it).first) <= 0)
+                        {   
+                            selectedPairs.push_back(std::make_pair(first, std::distance(it, sortedObjectiveFunctions.begin())));
+                            break;
+                        }
+                        it++;
+                    }
+                }
+
+                //krzyżujemy
+                auto start = sortedObjectiveFunctions.begin();
+                std::vector<std::pair<int, morph::vVector<unsigned>> > children;
+
+                for (auto selectedPair: selectedPairs)
+                {
+                    auto first = start, second = start;
+                    std::advance(first, selectedPair.first);
+                    std::advance(second, selectedPair.second);
+                    
+                    children.push_back((this->*crossover)(*first, *second));
+                }
+
+                //uśmiercamy za słabe osobniki
+                sortedObjectiveFunctions = (this->*naturalSelection)(sortedObjectiveFunctions, proceedToNextCount);
+
+                //dodajemy dzieci do populacji       
+                for (auto child: children)
+                {
+                    sortedObjectiveFunctions.insert(child);
+                }         
+
+                //mutacja
+                for (it = sortedObjectiveFunctions.begin(); it != sortedObjectiveFunctions.end(); )//std::advance(it, 1))
+                {
+                    auto mutationResult = (this->*mutate)(*it);
+                    it = sortedObjectiveFunctions.erase(it);
+                    sortedObjectiveFunctions.insert(mutationResult);
+                }
+
+                it = sortedObjectiveFunctions.begin();
+                if ((*it).first < bestObjectiveValue)
+                {
+                    bestObjectiveValue = (*it).first;
+                    bestSolution = (*it).second;
+                }
+
+                for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+                {
+                    objectiveFunctionSum += (*it).first;
+                    it++;
+                }
+                firstNonEligibleObjectiveFunction = (*it).first;
+            }
+
+            solution = bestSolution;
+            if (verbose)
+            {
+                std::cout << "Wykonano " << iterationCounter << " iteracji." << std::endl;
+                std::cout << "Najlepsze znalezione rozwiązanie ma wartość funkcji celu równą: " << bestObjectiveValue << " = " << objectiveFunction() << std::endl;
+            }
+        }
+
+
+        std::vector<morph::vVector<unsigned>> startingPopulation(unsigned populationSize)
+        {
+            std::vector<morph::vVector<unsigned>> result;
+
+            for (long unsigned i = 0; i < populationSize; i++)
+            {
+                solveKRandom(cityCount * 5, geneticSeed + i);
+                result.push_back(solution);
+            }
+
+            return result;
+        }
+
+        std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
+        {
+            std::vector<morph::vVector<unsigned>> result;
+
+            long unsigned i;
+            //80% populacji poczatkowej losowych
+            for (i = 0; i < populationSize * 8 / 10; i++)
+            {
+                solveKRandom(cityCount * 5, geneticSeed + i);
+                result.push_back(solution);
+            }
+            //pozostałe 20% - 2opt startowany z losowego rozwiania
+            for (; i < populationSize; i++)
+            {
+                Random2OptImproved(geneticSeed + i);
+                result.push_back(solution);
+            }
+
+            return result;
+        }
+
+        std::pair<int, morph::vVector<unsigned>> mutation(const std::pair<int, morph::vVector<unsigned>> inputSolution)
+        {
+            auto input = inputSolution.second;
+            auto inputValue = inputSolution.first;
+
+            while (longRand(0, 100, geneticSeed) > 10)
+            {
+                unsigned long i = longRand(1, cityCount - 2, geneticSeed), j = longRand(1, cityCount - 2, geneticSeed);
+                if (labs(j - i) > 2)// && )
+                {
+                    const unsigned jSucc = (j + 1), jPred = (j - 1), iSucc = (i + 1), iPred = (i - 1);
+                    inputValue += cities[input[i]][input[jSucc]]; 
+                    inputValue += cities[input[jPred]][input[i]];
+
+                    inputValue += cities[input[j]][input[iSucc]];
+                    inputValue += cities[input[iPred]][input[j]];
+
+                    inputValue -= cities[input[j]][input[jSucc]];
+                    inputValue -= cities[input[jPred]][input[j]];
+
+                    inputValue -= cities[input[i]][input[iSucc]];
+                    inputValue -= cities[input[iPred]][input[i]];
+                    
+                    std::iter_swap(input.begin() + i, input.begin() + j);
+                }
+            }
+
+            return std::make_pair(inputValue, input);
+        }
+
+        std::pair<int, morph::vVector<unsigned>> crossover(std::pair<int, morph::vVector<unsigned>> first, std::pair<int, morph::vVector<unsigned>> second)
+        {
+            //wybierz jakiś losowy przedział na second
+            //TODO: jakieś przyjemniejsze to losowanie by się przydało
+            unsigned i = longRand(0, cityCount - 1, geneticSeed), j;
+            do 
+            {
+                j = longRand(0, cityCount - 1, geneticSeed);
+            } while(j == i);
+
+            if (i > j)
+            {
+                std::swap(i, j);
+            }
+
+
+            //spermutuj tą część second
+            std::shuffle(second.second.begin() + i, second.second.begin() + j - 1, rng);
+
+            //usuń te wartości z pierwszego
+            for (unsigned k = i; k < j; k++)
+            {    
+                auto toBeDeleted = std::find(first.second.begin(), first.second.end(), second.second[k]);
+                
+                if ((toBeDeleted != first.second.begin()) && (toBeDeleted != first.second.end() - 1))
+                {
+                    first.first -= cities[*(toBeDeleted - 1)][*toBeDeleted];
+                    first.first -= cities[*toBeDeleted][*(toBeDeleted + 1)];
+                    first.first += cities[*(toBeDeleted - 1)][*(toBeDeleted + 1)];
+                }
+                else if (toBeDeleted == first.second.begin())
+                {
+                    first.first -= cities[*(first.second.end() - 1)][*toBeDeleted];
+                    first.first -= cities[*toBeDeleted][*(toBeDeleted + 1)];
+                    first.first += cities[*(first.second.end() - 1)][*(toBeDeleted + 1)];
+                }
+                else 
+                {
+                    first.first -= cities[*(toBeDeleted - 1)][*toBeDeleted];
+                    first.first -= cities[*toBeDeleted][*(first.second.begin())];
+                    first.first += cities[*(toBeDeleted - 1)][*(first.second.begin())];
+                }
+                first.second.erase(toBeDeleted);
+            }
+
+            //wstaw spermutowaną część drugiego na koniec pierwszego
+            int index = first.second.size() - 1;
+            first.first -= cities[*(first.second.begin() + index)][*(first.second.begin())];
+            for (unsigned k = i; k < j; k++)
+            {
+                auto value = *(second.second.begin() + k);
+                first.second.push_back(value);
+                first.first += cities[*(first.second.begin() + index++)][value];
+            }
+            first.first += cities[*(first.second.begin() + index)][*(first.second.begin())];
+
+            return first;
+        }
+
+        std::set<std::pair<int, morph::vVector<unsigned>>> selection(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
+        {
+            if (proceedToNextCount < population.size())
+            {        
+                auto it = population.begin();
+                std::advance(it, proceedToNextCount);
+                
+                while (population.end() != it)
+                {
+                    it = population.erase(it);
+                }
+            }
+
+            return population;
+        }
+
+
         inline void insert(unsigned i, unsigned j)
         {
             //TODO check if ok
@@ -901,6 +1221,168 @@ class MatrixTSPInstance
             solution.erase(solution.begin() + i);
             solution.insert(solution.begin() + j, toInclude);
         }
+
+        void Random2OptImproved(const long seed)
+        {
+            if (symmetric)
+                return Random2OptImprovedSymmetric(seed);
+            Random2OptImprovedNonSymmetric(seed);
+        }
+
+        void Random2OptImprovedSymmetric(const long seed) 
+        {
+            // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
+            solveKRandom(1, seed);
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+            unsigned iteration = 0;
+
+            while (changes && ++iteration <= max2OptIterations)
+            {
+                changes = false;
+                for (unsigned i = 1; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < i; j++)
+                    {
+                        int costDifference = cities[solution[i]][solution[j]]; 
+                        costDifference += cities[solution[j + 1]][solution[i + 1]];
+                        costDifference -= cities[solution[j]][solution[j + 1]];
+                        costDifference -= cities[solution[i]][solution[i + 1]];
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                            {
+                                unsigned tmp = solution[j + m];
+                                solution[j + m] = solution[i - (m - 1)];
+                                solution[i - (m - 1)] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                unsigned i = cityCount - 1;
+                for (unsigned j = 0; j < i; j++)
+                {
+                    int costDifference = cities[solution[i]][solution[j]]; 
+                    costDifference += cities[solution[j + 1]][solution[0]];
+                    costDifference -= cities[solution[j]][solution[j + 1]];
+                    costDifference -= cities[solution[i]][solution[0]];
+
+                    if (costDifference < 0)
+                    {
+                        changes = true;
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                        {
+                            unsigned tmp = solution[j + m];
+                            solution[j + m] = solution[i - (m - 1)];
+                            solution[i - (m - 1)] = tmp;
+                        }
+                    }
+                }
+            }
+        }
+
+        void Random2OptImprovedNonSymmetric(const long seed) 
+        {
+            solveKRandom(1, seed);
+
+            // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
+
+            int currentCost = objectiveFunction();
+
+            if (currentCost == 0)
+            {
+                return;
+            }
+
+            bool changes = true;
+            unsigned iteration = 0;
+
+            while (changes && ++iteration <= max2OptIterations)
+            {
+                changes = false;
+                for (unsigned i = 0; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < cityCount - 1; j++)
+                    {
+                        if (i == j)
+                            continue;
+
+                        int costDifference = cities[solution[i]][solution[j]]; 
+                        costDifference += cities[solution[j + 1]][solution[i + 1]];
+                        costDifference -= cities[solution[j]][solution[j + 1]];
+                        costDifference -= cities[solution[i]][solution[i + 1]];
+
+                        if (j > i)
+                        {
+                            for (unsigned k = j + 1; k < cityCount - 1; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                            costDifference -= cities[solution[cityCount - 1]][solution[0]];
+                            costDifference += cities[solution[0]][solution[cityCount - 1]];
+                            for (unsigned k = 0; k < i; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                        }
+                        else
+                        {
+                            for (unsigned k = j + 1; k < i; k++)
+                            {
+                                costDifference -= cities[solution[k]][solution[k + 1]];
+                                costDifference += cities[solution[k + 1]][solution[k]];
+                            }
+                        }
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            if (i > j)
+                            {
+                                for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                                {
+                                    unsigned tmp = solution[j + m];
+                                    int tmpIndex = (i - (m - 1)) % cityCount;
+                                    if (tmpIndex < 0)
+                                    {
+                                        tmpIndex += cityCount;
+                                    }
+                                    solution[j + m] = solution[tmpIndex];
+                                    solution[tmpIndex] = tmp;
+                                }
+                            }
+                            else
+                            {
+                                for (unsigned m = 1; m < (j - i) / 2 + 1; m++)
+                                {
+                                    unsigned tmp = solution[(j + m) % cityCount];
+                                    int tmpIndex = (i - (m - 1)) % cityCount;
+                                    if (tmpIndex < 0)
+                                    {
+                                        tmpIndex += cityCount;
+                                    }
+                                    solution[(j + m) % cityCount] = solution[tmpIndex];
+                                    solution[tmpIndex] = tmp;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
 
         // //insert solution[i] at index j
         // inline void symmetricInsert(unsigned i, unsigned j)
@@ -945,10 +1427,10 @@ class MatrixTSPInstance
                 {
                     iPred += cityCount;
                 }
-                int costDifference = cities[solution[i]][solution[jSucc]]; //citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
-                costDifference += cities[solution[iPred]][solution[j]];  //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
-                costDifference -= cities[solution[j]][solution[jSucc]];//citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
-                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+                int costDifference = cities[solution[i]][solution[jSucc]]; //cities[solution[i]][solution[jSucc]]; 
+                costDifference += cities[solution[iPred]][solution[j]];  //cities[solution[iPred]][solution[j]];
+                costDifference -= cities[solution[j]][solution[jSucc]];//cities[solution[j]][solution[jSucc]];
+                costDifference -= cities[solution[iPred]][solution[i]]; //cities[solution[iPred]][solution[i]];
 
                 return costDifference;
             }
@@ -969,12 +1451,12 @@ class MatrixTSPInstance
             }
             int isucc = (i + 1) % cityCount;
 
-            int costDifference = cities[solution[jpred]][solution[i]]; //citiesDistance(cities[solution[jpred]], cities[solution[i]]);
-            costDifference += cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]);
-            costDifference += cities[solution[ipred]][solution[isucc]]; //citiesDistance(cities[solution[ipred]], cities[solution[isucc]]);
-            costDifference -= cities[solution[ipred]][solution[i]]; //citiesDistance(cities[solution[ipred]], cities[solution[i]]);
-            costDifference -= cities[solution[i]][solution[isucc]]; //citiesDistance(cities[solution[i]], cities[solution[isucc]]);
-            costDifference -= cities[solution[jpred]][solution[j]]; //citiesDistance(cities[solution[jpred]], cities[solution[j]]);
+            int costDifference = cities[solution[jpred]][solution[i]]; //cities[solution[jpred]][solution[i]];
+            costDifference += cities[solution[i]][solution[j]]; //cities[solution[i]][solution[j]];
+            costDifference += cities[solution[ipred]][solution[isucc]]; //cities[solution[ipred]][solution[isucc]];
+            costDifference -= cities[solution[ipred]][solution[i]]; //cities[solution[ipred]][solution[i]];
+            costDifference -= cities[solution[i]][solution[isucc]]; //cities[solution[i]][solution[isucc]];
+            costDifference -= cities[solution[jpred]][solution[j]]; //cities[solution[jpred]][solution[j]];
 
             return costDifference;
             
@@ -1002,12 +1484,12 @@ class MatrixTSPInstance
             }
             int isucc = (i + 1) % cityCount;
 
-            int costDifference = cities[solution[jpred]][solution[i]]; //citiesDistance(cities[solution[jpred]], cities[solution[i]]);
-            costDifference += cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]);
-            costDifference += cities[solution[ipred]][solution[isucc]]; //citiesDistance(cities[solution[ipred]], cities[solution[isucc]]);
-            costDifference -= cities[solution[ipred]][solution[i]]; //citiesDistance(cities[solution[ipred]], cities[solution[i]]);
-            costDifference -= cities[solution[i]][solution[isucc]]; //citiesDistance(cities[solution[i]], cities[solution[isucc]]);
-            costDifference -= cities[solution[jpred]][solution[j]]; //citiesDistance(cities[solution[jpred]], cities[solution[j]]);
+            int costDifference = cities[solution[jpred]][solution[i]]; //cities[solution[jpred]][solution[i]];
+            costDifference += cities[solution[i]][solution[j]]; //cities[solution[i]][solution[j]];
+            costDifference += cities[solution[ipred]][solution[isucc]]; //cities[solution[ipred]][solution[isucc]];
+            costDifference -= cities[solution[ipred]][solution[i]]; //cities[solution[ipred]][solution[i]];
+            costDifference -= cities[solution[i]][solution[isucc]]; //cities[solution[i]][solution[isucc]];
+            costDifference -= cities[solution[jpred]][solution[j]]; //cities[solution[jpred]][solution[j]];
 
             return costDifference;
         }
@@ -1051,18 +1533,18 @@ class MatrixTSPInstance
         {
             if (i == cityCount - 1)
             {
-                int costDifference = cities[solution[i]][solution[j]]; //citiesDistance(cities[solution[i]], cities[solution[j]]); 
-                costDifference += cities[solution[j + 1]][solution[0]]; //citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
-                costDifference -= cities[solution[j]][solution[j + 1]]; //citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
-                costDifference -= cities[solution[i]][solution[0]]; //citiesDistance(cities[solution[i]], cities[solution[0]]);
+                int costDifference = cities[solution[i]][solution[j]]; //cities[solution[i]][solution[j]]; 
+                costDifference += cities[solution[j + 1]][solution[0]]; //cities[solution[j + 1]][solution[0]];
+                costDifference -= cities[solution[j]][solution[j + 1]]; //cities[solution[j]][solution[j + 1]];
+                costDifference -= cities[solution[i]][solution[0]]; //cities[solution[i]][solution[0]];
 
                 return costDifference;
             }
 
-            int costDifference = cities[solution[i]][solution[j]];//citiesDistance(cities[solution[i]], cities[solution[j]]); 
-            costDifference += cities[solution[j + 1]][solution[i + 1]]; //citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
-            costDifference -= cities[solution[j]][solution[j + 1]]; //citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
-            costDifference -= cities[solution[i]][solution[i + 1]]; //citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+            int costDifference = cities[solution[i]][solution[j]];//cities[solution[i]][solution[j]]; 
+            costDifference += cities[solution[j + 1]][solution[i + 1]]; //cities[solution[j + 1]][solution[i + 1]];
+            costDifference -= cities[solution[j]][solution[j + 1]]; //cities[solution[j]][solution[j + 1]];
+            costDifference -= cities[solution[i]][solution[i + 1]]; //cities[solution[i]][solution[i + 1]];
 
             return costDifference; 
         }
@@ -1141,10 +1623,10 @@ class MatrixTSPInstance
             if (!j && i == cityCount - 1)
             {
                 unsigned iPred = (i - 1) % cityCount; 
-                int costDifference = cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
-                costDifference += cities[solution[i]][solution[1]]; //citiesDistance(cities[solution[i]], cities[solution[1]]);
-                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
-                costDifference -= cities[solution[j]][solution[1]]; //citiesDistance(cities[solution[j]], cities[solution[1]]);
+                int costDifference = cities[solution[iPred]][solution[j]]; //cities[solution[iPred]][solution[j]]; 
+                costDifference += cities[solution[i]][solution[1]]; //cities[solution[i]][solution[1]];
+                costDifference -= cities[solution[iPred]][solution[i]]; //cities[solution[iPred]][solution[i]];
+                costDifference -= cities[solution[j]][solution[1]]; //cities[solution[j]][solution[1]];
 
                 return costDifference;
             }
@@ -1155,10 +1637,10 @@ class MatrixTSPInstance
                 {
                     jPred += cityCount;
                 }
-                int costDifference = cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]); 
-                costDifference += cities[solution[jPred]][solution[i]]; //citiesDistance(cities[solution[jPred]], cities[solution[i]]);
-                costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
-                costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+                int costDifference = cities[solution[j]][solution[iSucc]]; //cities[solution[j]][solution[iSucc]]; 
+                costDifference += cities[solution[jPred]][solution[i]]; //cities[solution[jPred]][solution[i]];
+                costDifference -= cities[solution[i]][solution[iSucc]]; //cities[solution[i]][solution[iSucc]];
+                costDifference -= cities[solution[jPred]][solution[j]]; //cities[solution[jPred]][solution[j]];
 
                 return costDifference;
             }
@@ -1174,17 +1656,17 @@ class MatrixTSPInstance
                 iPred += cityCount;
             }
 
-            int costDifference = cities[solution[i]][solution[jSucc]];//citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
-            costDifference += cities[solution[jPred]][solution[i]];//citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+            int costDifference = cities[solution[i]][solution[jSucc]];//cities[solution[i]][solution[jSucc]]; 
+            costDifference += cities[solution[jPred]][solution[i]];//cities[solution[jPred]][solution[i]];
 
-            costDifference += cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]);
-            costDifference += cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+            costDifference += cities[solution[j]][solution[iSucc]]; //cities[solution[j]][solution[iSucc]];
+            costDifference += cities[solution[iPred]][solution[j]]; //cities[solution[iPred]][solution[j]];
 
-            costDifference -= cities[solution[j]][solution[jSucc]]; //citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
-            costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+            costDifference -= cities[solution[j]][solution[jSucc]]; //cities[solution[j]][solution[jSucc]];
+            costDifference -= cities[solution[jPred]][solution[j]]; //cities[solution[jPred]][solution[j]];
 
-            costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
-            costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+            costDifference -= cities[solution[i]][solution[iSucc]]; //cities[solution[i]][solution[iSucc]];
+            costDifference -= cities[solution[iPred]][solution[i]]; //cities[solution[iPred]][solution[i]];
 
             return costDifference; 
         }
@@ -1194,12 +1676,12 @@ class MatrixTSPInstance
             if (!j && i == cityCount - 1)
             {
                 unsigned iPred = (i - 1) % cityCount; 
-                int costDifference = cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]); 
-                costDifference += cities[solution[i]][solution[1]]; //citiesDistance(cities[solution[i]], cities[solution[1]]);
+                int costDifference = cities[solution[iPred]][solution[j]]; //cities[solution[iPred]][solution[j]]; 
+                costDifference += cities[solution[i]][solution[1]]; //cities[solution[i]][solution[1]];
                 costDifference -= cities[solution[i]][solution[j]];
                 costDifference += cities[solution[j]][solution[i]];
-                costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
-                costDifference -= cities[solution[j]][solution[1]]; //citiesDistance(cities[solution[j]], cities[solution[1]]);
+                costDifference -= cities[solution[iPred]][solution[i]]; //cities[solution[iPred]][solution[i]];
+                costDifference -= cities[solution[j]][solution[1]]; //cities[solution[j]][solution[1]];
 
                 return costDifference;
             }
@@ -1210,12 +1692,12 @@ class MatrixTSPInstance
                 {
                     jPred += cityCount;
                 }
-                int costDifference = cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]); 
-                costDifference += cities[solution[jPred]][solution[i]]; //citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+                int costDifference = cities[solution[j]][solution[iSucc]]; //cities[solution[j]][solution[iSucc]]; 
+                costDifference += cities[solution[jPred]][solution[i]]; //cities[solution[jPred]][solution[i]];
                 costDifference -= cities[solution[i]][solution[j]];
                 costDifference += cities[solution[j]][solution[i]];
-                costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
-                costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+                costDifference -= cities[solution[i]][solution[iSucc]]; //cities[solution[i]][solution[iSucc]];
+                costDifference -= cities[solution[jPred]][solution[j]]; //cities[solution[jPred]][solution[j]];
 
                 return costDifference;
             }
@@ -1233,17 +1715,17 @@ class MatrixTSPInstance
                 iPred += cityCount;
             }
 
-            int costDifference = cities[solution[i]][solution[jSucc]];//citiesDistance(cities[solution[i]], cities[solution[jSucc]]); 
-            costDifference += cities[solution[jPred]][solution[i]];//citiesDistance(cities[solution[jPred]], cities[solution[i]]);
+            int costDifference = cities[solution[i]][solution[jSucc]];//cities[solution[i]][solution[jSucc]]; 
+            costDifference += cities[solution[jPred]][solution[i]];//cities[solution[jPred]][solution[i]];
 
-            costDifference += cities[solution[j]][solution[iSucc]]; //citiesDistance(cities[solution[j]], cities[solution[iSucc]]);
-            costDifference += cities[solution[iPred]][solution[j]]; //citiesDistance(cities[solution[iPred]], cities[solution[j]]);
+            costDifference += cities[solution[j]][solution[iSucc]]; //cities[solution[j]][solution[iSucc]];
+            costDifference += cities[solution[iPred]][solution[j]]; //cities[solution[iPred]][solution[j]];
 
-            costDifference -= cities[solution[j]][solution[jSucc]]; //citiesDistance(cities[solution[j]], cities[solution[jSucc]]);
-            costDifference -= cities[solution[jPred]][solution[j]]; //citiesDistance(cities[solution[jPred]], cities[solution[j]]);
+            costDifference -= cities[solution[j]][solution[jSucc]]; //cities[solution[j]][solution[jSucc]];
+            costDifference -= cities[solution[jPred]][solution[j]]; //cities[solution[jPred]][solution[j]];
 
-            costDifference -= cities[solution[i]][solution[iSucc]]; //citiesDistance(cities[solution[i]], cities[solution[iSucc]]);
-            costDifference -= cities[solution[iPred]][solution[i]]; //citiesDistance(cities[solution[iPred]], cities[solution[i]]);
+            costDifference -= cities[solution[i]][solution[iSucc]]; //cities[solution[i]][solution[iSucc]];
+            costDifference -= cities[solution[iPred]][solution[i]]; //cities[solution[iPred]][solution[i]];
 
             return costDifference; 
         }

@@ -1319,6 +1319,78 @@ class EuclideanTSPInstance
             return result;
         }
 
+        std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
+        {
+            std::vector<morph::vVector<unsigned>> result;
+
+            long unsigned i;
+            //80% populacji poczatkowej losowych
+            for (i = 0; i < populationSize * 8 / 10; i++)
+            {
+                solveKRandom(cityCount * 5, geneticSeed + i, false);
+                result.push_back(solution);
+            }
+            //pozostałe 20% - 2opt startowany z losowego rozwiania
+            for (; i < populationSize; i++)
+            {
+                Random2OptImproved(geneticSeed + i);
+                result.push_back(solution);
+            }
+
+            return result;
+        }
+
+        void Random2OptImproved(const long seed)
+        {
+            solveKRandom(1, seed, false);
+
+            bool changes = true;
+            while (changes)
+            {
+                changes = false;
+                for (unsigned i = 1; i < cityCount - 1; i++)
+                {
+                    for (unsigned j = 0; j < i; j++)
+                    {
+                        int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                        costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[i + 1]]);
+                        costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                        costDifference -= citiesDistance(cities[solution[i]], cities[solution[i + 1]]);
+                        
+                        if (costDifference < 0)
+                        {
+                            changes = true;
+                            for (unsigned m = 1; m < (i - j) / 2 +1; m++)
+                            {
+                                unsigned tmp = solution[j + m];
+                                solution[j + m] = solution[i - (m - 1)];
+                                solution[i - (m - 1)] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                unsigned i = cityCount - 1;
+                for (unsigned j = 0; j < i; j++)
+                {
+                    int costDifference = citiesDistance(cities[solution[i]], cities[solution[j]]); 
+                    costDifference += citiesDistance(cities[solution[j + 1]], cities[solution[0]]);
+                    costDifference -= citiesDistance(cities[solution[j]], cities[solution[j + 1]]);
+                    costDifference -= citiesDistance(cities[solution[i]], cities[solution[0]]);
+
+                    if (costDifference < 0)
+                    {
+                        changes = true;
+                        for (unsigned m = 1; m < (i - j) / 2 + 1; m++)
+                        {
+                            unsigned tmp = solution[j + m];
+                            solution[j + m] = solution[i - (m - 1)];
+                            solution[i - (m - 1)] = tmp;
+                        }
+                    }
+                }
+            }
+        }
 
         std::pair<int, morph::vVector<unsigned>> mutation(const std::pair<int, morph::vVector<unsigned>> inputSolution)
         {
