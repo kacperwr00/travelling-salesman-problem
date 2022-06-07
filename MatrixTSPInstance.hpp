@@ -1675,6 +1675,32 @@ class MatrixTSPInstance
             return population;
         }
 
+        std::set<std::pair<int, morph::vVector<unsigned>>> selectionTwo(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
+    {
+        std::set<std::pair<int, morph::vVector<unsigned>>> newPopulation;
+        if(proceedToNextCount < population.size())
+        {
+            unsigned groupSize = population.size()/proceedToNextCount;
+
+            auto it = population.begin();
+
+            unsigned i = 0;
+            do
+            {
+                unsigned randomInGroup = longRand(0, groupSize, geneticSeed);
+                std::advance(it, randomInGroup);
+                newPopulation.insert(*it);
+                if(i < population.size()-groupSize){
+                    std::advance(it, groupSize-randomInGroup);
+                    i+=groupSize;
+                }
+            }
+            while(i < population.size()-groupSize);
+
+        }
+        return newPopulation;
+    }
+
 
         inline void insert(unsigned i, unsigned j)
         {
