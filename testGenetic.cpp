@@ -4,50 +4,30 @@
 
 int main()
 {
-    std::cout << "EUCL" << std::endl;
-    EuclideanTSPInstance euclInstance;
-    euclInstance.randomInstance(123, 70);
-    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 10, &EuclideanTSPInstance::startingPopulation, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutation, 
-        &EuclideanTSPInstance::crossover, &EuclideanTSPInstance::selection);
-
-    std::cout << "Dla porównania 2-opt: \n";
-    euclInstance.solve2Opt(false);
-    std::cout << euclInstance.objectiveFunction() << std::endl;
-
-    std::cout << "Dla porównania Krandom(cityCount): \n";
-    euclInstance.solveKRandom(euclInstance.getCityCount(), 123, false);
-    std::cout << euclInstance.objectiveFunction() << std::endl;
-
-    euclInstance.deleteInstance();
-
-    std::cout << "MATRIX" << std::endl;
-    MatrixTSPInstance matrixInstance;
-
-    //LOSOWE PRÓBKOWANIE
-
-    std::vector<morph::vVector<unsigned>> (MatrixTSPInstance::*startingPopulationsMatrix[3])(unsigned);
-    std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*getCrossoverPairsMatrix[2])(const unsigned, const unsigned, const unsigned, const long, const int, std::set<std::pair<int, morph::vVector<unsigned>>>);
-    std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*crossoverFunctionsMatrix[3])(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
-    std::set<std::pair<int, morph::vVector<unsigned>>> (MatrixTSPInstance::*selectionFunctionsMatrix[2])(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
-    std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*mutationsMatrix[3])(const std::pair<int, morph::vVector<unsigned>>);
+    std::vector<morph::vVector<unsigned>> (EuclideanTSPInstance::*startingPopulationsEucl[3])(unsigned);
+    std::vector<std::pair<unsigned, unsigned>> (EuclideanTSPInstance::*getCrossoverPairsEucl[2])(const unsigned, const unsigned, const unsigned, const long, const int, std::set<std::pair<int, morph::vVector<unsigned>>>);
+    std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*crossoverFunctionsEucl[3])(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
+    std::set<std::pair<int, morph::vVector<unsigned>>> (EuclideanTSPInstance::*selectionFunctionsEucl[2])(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
+    std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*mutationsEucl[3])(const std::pair<int, morph::vVector<unsigned>>);
     
-    startingPopulationsMatrix[0] = &MatrixTSPInstance::startingPopulation;
-    startingPopulationsMatrix[1] = &MatrixTSPInstance::startingPopulationTwo;
-    // startingPopulationsMatrix[2] = &MatrixTSPInstance::startingPopulationThree;
+    startingPopulationsEucl[0] = &EuclideanTSPInstance::startingPopulation;
+    startingPopulationsEucl[1] = &EuclideanTSPInstance::startingPopulationTwo;
+    startingPopulationsEucl[2] = &EuclideanTSPInstance::startingPopulationThree;
 
-    getCrossoverPairsMatrix[0] = &MatrixTSPInstance::crossoverPairs;
-    // crossoverSelectionFunctionsMatrix[1] = &MatrixTSPInstance::crossoverSelectionTwo;
+    getCrossoverPairsEucl[0] = &EuclideanTSPInstance::crossoverPairs;
+    // crossoverSelectionFunctionsEucl[1] = &EuclideanTSPInstance::crossoverSelectionTwo;
 
-    crossoverFunctionsMatrix[0] = &MatrixTSPInstance::crossover;
-    // crossoverFunctionsMatrix[1] = &MatrixTSPInstance::crossoverTwo;
-    // crossoverFunctionssMatrix[2] = &MatrixTSPInstance::crossoverThree;
+    crossoverFunctionsEucl[0] = &EuclideanTSPInstance::crossover;
+    crossoverFunctionsEucl[1] = &EuclideanTSPInstance::crossoverTwo;
+    crossoverFunctionsEucl[2] = &EuclideanTSPInstance::crossoverThree;
 
-    selectionFunctionsMatrix[0] = &MatrixTSPInstance::selection;
-    // selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
+    selectionFunctionsEucl[0] = &EuclideanTSPInstance::selection;
+    // selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
 
-    mutationsMatrix[0] = &MatrixTSPInstance::mutation;
-    // mutationsMatrix[1] = &MatrixTSPInstance::mutationTwo;
-    // mutationsMatrix[2] = &MatrixTSPInstance::mutationThree;
+    mutationsEucl[0] = &EuclideanTSPInstance::mutation;
+    mutationsEucl[1] = &EuclideanTSPInstance::mutationTwo;
+    mutationsEucl[2] = &EuclideanTSPInstance::mutationThree;
+
 
     // int totalVariantCount = 3 * 3 * 3 * 2 * 2;
     std::vector<std::array<unsigned, 5>> variants;
@@ -95,6 +75,55 @@ int main()
         // std::cout << "Variant number " << i << ": " << variants[i][0] << " " << variants[i][1] << " " << variants[i][2] << " "  << variants[i][3] << " " << variants[i][4] << std::endl;
     }
 
+
+    std::cout << "EUCL" << std::endl;
+    EuclideanTSPInstance euclInstance;
+    euclInstance.randomInstance(123, 70);
+    euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[0],
+            mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[0]);
+    euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 10, &EuclideanTSPInstance::startingPopulationThree, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutationThree, 
+        &EuclideanTSPInstance::crossoverTwo, &EuclideanTSPInstance::selection);
+
+    std::cout << "Dla porównania 2-opt: \n";
+    euclInstance.solve2Opt(false);
+    std::cout << euclInstance.objectiveFunction() << std::endl;
+
+    std::cout << "Dla porównania Krandom(cityCount): \n";
+    euclInstance.solveKRandom(euclInstance.getCityCount(), 123, false);
+    std::cout << euclInstance.objectiveFunction() << std::endl;
+
+    euclInstance.deleteInstance();
+
+    std::cout << "MATRIX" << std::endl;
+    MatrixTSPInstance matrixInstance;
+
+    //LOSOWE PRÓBKOWANIE
+
+    std::vector<morph::vVector<unsigned>> (MatrixTSPInstance::*startingPopulationsMatrix[3])(unsigned);
+    std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*getCrossoverPairsMatrix[2])(const unsigned, const unsigned, const unsigned, const long, const int, std::set<std::pair<int, morph::vVector<unsigned>>>);
+    std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*crossoverFunctionsMatrix[3])(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
+    std::set<std::pair<int, morph::vVector<unsigned>>> (MatrixTSPInstance::*selectionFunctionsMatrix[2])(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
+    std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*mutationsMatrix[3])(const std::pair<int, morph::vVector<unsigned>>);
+    
+    startingPopulationsMatrix[0] = &MatrixTSPInstance::startingPopulation;
+    startingPopulationsMatrix[1] = &MatrixTSPInstance::startingPopulationTwo;
+    startingPopulationsMatrix[2] = &MatrixTSPInstance::startingPopulationThree;
+
+    getCrossoverPairsMatrix[0] = &MatrixTSPInstance::crossoverPairs;
+    // crossoverSelectionFunctionsMatrix[1] = &MatrixTSPInstance::crossoverSelectionTwo;
+
+    crossoverFunctionsMatrix[0] = &MatrixTSPInstance::crossover;
+    crossoverFunctionsMatrix[1] = &MatrixTSPInstance::crossoverTwo;
+    crossoverFunctionsMatrix[2] = &MatrixTSPInstance::crossoverThree;
+
+    selectionFunctionsMatrix[0] = &MatrixTSPInstance::selection;
+    // selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
+
+    mutationsMatrix[0] = &MatrixTSPInstance::mutation;
+    mutationsMatrix[1] = &MatrixTSPInstance::mutationTwo;
+    mutationsMatrix[2] = &MatrixTSPInstance::mutationThree;
+
+
     // for (int i = 0; i < 100; i++)
     // {
     //     matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 100, 15, 100, startingPopulationsMatrix[variants[i][0]],  getCrossoverPairsMatrix[0],
@@ -102,8 +131,8 @@ int main()
     // }
 
     matrixInstance.randomInstance(123, 70, false);
-    matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsMatrix[0], getCrossoverPairsMatrix[0],
-            mutationsMatrix[0], crossoverFunctionsMatrix[0], selectionFunctionsMatrix[0]);
+    matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsMatrix[2], getCrossoverPairsMatrix[0],
+            mutationsMatrix[2], crossoverFunctionsMatrix[2], selectionFunctionsMatrix[0]);
 
     std::cout << "Dla porównania 2-opt: \n";
     matrixInstance.solve2Opt();

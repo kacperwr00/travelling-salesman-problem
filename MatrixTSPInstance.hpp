@@ -16,6 +16,7 @@
 #define CITY_LIMIT 150
 #define BUFSIZE 2048
 #define MIN(a, b) a < b ? a : b
+#define POS_MOD(i, n) ((i) % (n) + (n)) % (n)
 
 // SPRAWOZDANIE:
 // pomijamy wprowadzenie itp.; sekcja experimental results, krótka notatka nt złożoności obliczeniowej
@@ -30,7 +31,7 @@ class MatrixTSPInstance
         unsigned cityCount;
         int** cities;
         morph::vVector<unsigned> solution;
-        unsigned max2OptIterations = 1000;
+        unsigned max2OptIterations = 10;
         bool symmetric = false;
 
         //        std::pair<int, int>* cities;
@@ -1073,11 +1074,19 @@ class MatrixTSPInstance
             if (verbose)
             {
                 std::cout << "Wykonano " << iterationCounter << " iteracji." << std::endl;
-                std::cout << "Najlepsze znalezione rozwiązanie ma wartość funkcji celu równą: " << bestObjectiveValue << " = " << objectiveFunction() << std::endl;
+                std::cout << "Najlepsze znalezione rozwiązanie ma wartość funkcji celu równą: " << bestObjectiveValue << " = " << objectiveFunction() << " solution.size() " << solution.size() << std::endl;
+
+                //sprawdz czy rozwiazanie dopuszczalne
+                for (unsigned i = 0; i < cityCount; i++)
+                {
+                    if (std::find(solution.begin(), solution.end(), i) == solution.end())
+                        std::cout << "ROZWIAZANIE NIEDOPUSZCZALNE";
+                }
             }
         }
 
 
+        //Wszystkie osobniki generowane są za pomocą k-random z k równym cityCount * 5
         std::vector<morph::vVector<unsigned>> startingPopulation(unsigned populationSize)
         {
             std::vector<morph::vVector<unsigned>> result;
@@ -1091,7 +1100,21 @@ class MatrixTSPInstance
             return result;
         }
 
+        //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 1
         std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
+        {
+            std::vector<morph::vVector<unsigned>> result;
+
+            for (long unsigned i = 0; i < populationSize; i++)
+            {
+                solveKRandom(((i + 1) * cityCount) >> 1, geneticSeed + i);
+                result.push_back(solution);
+            }
+
+            return result;
+        }
+
+        std::vector<morph::vVector<unsigned>> startingPopulationThree(unsigned populationSize)
         {
             std::vector<morph::vVector<unsigned>> result;
 
@@ -1111,7 +1134,6 @@ class MatrixTSPInstance
 
             return result;
         }
-
 
         std::vector<std::pair<unsigned, unsigned>> crossoverPairs(const unsigned populationSize, const unsigned proceedToNextCount, 
             const unsigned eligibleForCrossOverCount, const long objectiveFunctionSum, const int firstNonEligibleObjectiveFunction, 
@@ -1197,6 +1219,85 @@ class MatrixTSPInstance
             return std::make_pair(inputValue, input);
         }
 
+        std::pair<int, morph::vVector<unsigned>> mutationTwo(const std::pair<int, morph::vVector<unsigned>> inputSolution)
+        {
+            auto input = inputSolution.second;
+            auto inputValue = inputSolution.first;
+
+            while (longRand(0, 100, geneticSeed) > 80)
+            {
+                unsigned long i = longRand(1, cityCount - 2, geneticSeed), j = longRand(1, cityCount - 2, geneticSeed);
+                if (labs(j - i) > 2 && labs(j - i) < cityCount / 2)// && )
+                {
+                    const unsigned jSucc = (j + 1), jPred = (j - 1), iSucc = (i + 1), iPred = (i - 1);
+                    inputValue += cities[input[i]][input[jSucc]]; 
+                    inputValue += cities[input[jPred]][input[i]];
+
+                    inputValue += cities[input[j]][input[iSucc]];
+                    inputValue += cities[input[iPred]][input[j]];
+
+                    inputValue -= cities[input[j]][input[jSucc]];
+                    inputValue -= cities[input[jPred]][input[j]];
+
+                    inputValue -= cities[input[i]][input[iSucc]];
+                    inputValue -= cities[input[iPred]][input[i]];
+                    
+                    std::iter_swap(input.begin() + i, input.begin() + j);
+                }
+            }
+
+            return std::make_pair(inputValue, input);
+        }
+
+        std::pair<int, morph::vVector<unsigned>> mutationThree(const std::pair<int, morph::vVector<unsigned>> inputSolution)
+        {
+            auto input = inputSolution.second;
+            auto inputValue = inputSolution.first;
+
+            unsigned long i = longRand(1, cityCount - 2, geneticSeed), j = longRand(0, 10, geneticSeed);
+            if (i + j < cityCount - 1)// && )
+            {
+                morph::vVector<unsigned> toAdd;
+                auto it = input.begin() + i;
+                inputValue -= cities[*(it - 1)][*it]; 
+
+                for (long unsigned k = 0; k < j; k++)
+                {
+                    inputValue -= cities[*it][*(it + 1)]; 
+                    toAdd.push_back(*it);
+                    it = input.erase(it);
+                }
+                inputValue += cities[*(it - 1)][*it]; 
+
+                
+                inputValue -= cities[input[input.size() - 1]][input[0]];
+
+                while (toAdd.size())
+                {
+                    int currentMinCost = INT_MAX;
+                    unsigned currentNearestNeighboor = UINT32_MAX;
+                    for (unsigned i = 0; i < toAdd.size(); i++)
+                    {
+                        int dist = cities[input[input.size() - 1]][toAdd[i]];
+                        if (dist < currentMinCost)
+                        {
+                            currentMinCost = dist;
+                            currentNearestNeighboor = i;
+                        }
+                    }
+
+                    inputValue += currentMinCost;
+                    input.push_back(toAdd[currentNearestNeighboor]);
+                    toAdd.erase(toAdd.begin() + currentNearestNeighboor);
+                }
+
+                inputValue += cities[input[input.size() - 1]][input[0]];
+            }
+
+
+            return std::make_pair(inputValue, input);
+        }
+
         std::pair<int, morph::vVector<unsigned>> crossover(std::pair<int, morph::vVector<unsigned>> first, std::pair<int, morph::vVector<unsigned>> second)
         {
             //wybierz jakiś losowy przedział na second
@@ -1256,6 +1357,308 @@ class MatrixTSPInstance
             return first;
         }
 
+        std::pair<int, morph::vVector<unsigned>> crossoverTwo(std::pair<int, morph::vVector<unsigned>> first, std::pair<int, morph::vVector<unsigned>> second)
+        {
+            //losowe miasto startowe
+            unsigned i = longRand(0, cityCount - 1, geneticSeed);
+
+
+            bool* visitedFirst = (bool*)calloc(cityCount, sizeof(*visitedFirst)), 
+                    *visitedSecond = (bool*)calloc(cityCount, sizeof(*visitedFirst));
+            
+            unsigned firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+            visitedFirst[firstIIndex] = true;
+
+            unsigned secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+            visitedSecond[secondIIndex] = true;
+
+            morph::vVector<unsigned> result;
+            result.push_back(i);
+            int resultValue = 0;
+
+            for (unsigned visitedCount = 1; visitedCount < cityCount; visitedCount++)
+            {
+                int currentMinCost = INT_MAX;
+                unsigned currentNearestNeighboorFirst = UINT32_MAX, currentNearestNeighboorSecond = UINT32_MAX;
+                
+                unsigned firstPrev = POS_MOD(firstIIndex - 1, cityCount);
+                unsigned firstSucc = POS_MOD(firstIIndex + 1, cityCount);
+                unsigned secondPrev = POS_MOD(secondIIndex - 1, cityCount);
+                unsigned secondSucc = POS_MOD(secondIIndex + 1, cityCount);
+
+                if (!visitedFirst[firstPrev])
+                {
+                    int dist = cities[i][first.second[firstPrev]];
+                    if (dist < currentMinCost)
+                    {
+                        currentMinCost = dist;
+                        currentNearestNeighboorFirst = firstPrev;
+                        currentNearestNeighboorSecond = UINT32_MAX;
+                    }
+                }
+                if (!visitedFirst[firstSucc])
+                {
+                    int dist = cities[i][first.second[firstSucc]];
+                    if (dist < currentMinCost)
+                    {
+                        currentMinCost = dist;
+                        currentNearestNeighboorFirst = firstSucc;
+                        currentNearestNeighboorSecond = UINT32_MAX;
+                    }
+                }
+                if (!visitedSecond[secondPrev])
+                {
+                    int dist = cities[i][second.second[secondPrev]];
+                    if (dist < currentMinCost)
+                    {
+                        currentMinCost = dist;
+                        currentNearestNeighboorSecond = secondPrev;
+                        currentNearestNeighboorFirst = UINT32_MAX;
+                    }
+                }
+                if (!visitedSecond[secondSucc])
+                {
+                    int dist = cities[i][second.second[secondSucc]];
+                    if (dist < currentMinCost)
+                    {
+                        currentMinCost = dist;
+                        currentNearestNeighboorSecond = secondSucc;
+                        currentNearestNeighboorFirst = UINT32_MAX;
+                    }
+                }
+
+                if (currentMinCost < INT_MAX)
+                {
+                    if (currentNearestNeighboorFirst != UINT32_MAX)
+                    {
+                        //wybraliśmy miasto z pierwszego rodzica
+                        i = first.second[currentNearestNeighboorFirst];
+                        firstIIndex = currentNearestNeighboorFirst;
+                        secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+                    }
+                    else
+                    {
+                        //wybraliśmy miasto z drugiego rodzica
+                        i = second.second[currentNearestNeighboorSecond];
+                        firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+                        secondIIndex = currentNearestNeighboorSecond;
+                    }
+                    visitedFirst[firstIIndex] = true;
+                    visitedSecond[secondIIndex] = true;
+
+
+                    resultValue += cities[result[result.size() - 1]][i];
+                    result.push_back(i);
+                }
+                else
+                {
+                    //nie znalezlismy nieodwiedzonego sasiada
+                    currentMinCost = INT_MAX;
+                    currentNearestNeighboorFirst = UINT32_MAX;
+                    currentNearestNeighboorSecond = UINT32_MAX;
+
+                    //dodaj najbliższe jeszcze nie odwiedzone miasto
+                    //bardzo podobna procedura, ale k ma szerszy zakres
+                    for (unsigned k = 0; k < cityCount; k++)
+                    {
+                        //claim -- dla sprawdzonych juz wcześniej miast nie bedziemy liczyc i porownywac bo są już odwiedzone
+                        if (!visitedFirst[k])
+                        {
+                            int dist = cities[i][first.second[k]];
+                            if (dist < currentMinCost)
+                            {
+                                currentMinCost = dist;
+                                currentNearestNeighboorFirst = k;
+                                currentNearestNeighboorSecond = UINT32_MAX;
+                            }
+                        }
+                        if (!visitedSecond[k])
+                        {
+                            int dist = cities[i][second.second[k]];
+                            if (dist < currentMinCost)
+                            {
+                                currentMinCost = dist;
+                                currentNearestNeighboorSecond = k;
+                                currentNearestNeighboorFirst = UINT32_MAX;
+                            }
+                        }
+                    }
+
+                    //claim -- znalezlismy nieodwiedzone miasto
+                    if (currentNearestNeighboorFirst != UINT32_MAX)
+                    {
+                        //wybraliśmy miasto z pierwszego rodzica
+                        i = first.second[currentNearestNeighboorFirst];
+                        firstIIndex = currentNearestNeighboorFirst;
+                        secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+                    }
+                    else
+                    {
+                        //wybraliśmy miasto z drugiego rodzica
+                        i = second.second[currentNearestNeighboorSecond];
+                        firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+                        secondIIndex = currentNearestNeighboorSecond;
+                    }
+
+                    visitedFirst[firstIIndex] = true;
+                    visitedSecond[secondIIndex] = true;
+
+                    resultValue += cities[result[result.size() - 1]][i];
+                    result.push_back(i);
+                }    
+            }
+
+            resultValue += cities[result[result.size() - 1]][result[0]];
+            
+            // zwroc potomstwo
+            free(visitedFirst);
+            free(visitedSecond);
+            return std::make_pair(resultValue, result);
+        }
+
+        std::pair<int, morph::vVector<unsigned>> crossoverThree(std::pair<int, morph::vVector<unsigned>> first, std::pair<int, morph::vVector<unsigned>> second)
+        {
+            //1 wybor losowego miasta poczatkowego i oraz kopia do pierwszego genu dziecka
+            unsigned i = longRand(0, cityCount - 1, geneticSeed);
+
+
+            bool* visitedFirst = (bool*)calloc(cityCount, sizeof(*visitedFirst)), 
+                    *visitedSecond = (bool*)calloc(cityCount, sizeof(*visitedFirst));
+            
+            unsigned firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+            visitedFirst[firstIIndex] = true;
+
+            unsigned secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+            visitedSecond[secondIIndex] = true;
+
+            morph::vVector<unsigned> result;
+            result.push_back(i);
+            int resultValue = 0;
+
+            //2 jezeli wszystkie miasta sa odwiedzone to return
+            for (unsigned visitedCount = 1; visitedCount < cityCount; visitedCount++)
+            {
+                int currentMinCost = INT_MAX;
+                unsigned currentNearestNeighboorFirst = UINT32_MAX, currentNearestNeighboorSecond = UINT32_MAX;
+                    
+                //3 oznacz j1 i j2 miasta zlokalizowane po miescie i w pierwszym i drugim rodzicu
+                for (unsigned k = firstIIndex; k < cityCount; k++)
+                {
+                    //4 d min = min (d ij1, d ij2)
+                    if (!visitedFirst[k])
+                    {
+                        int dist = cities[i][first.second[k]];
+                        if (dist < currentMinCost)
+                        {
+                            currentMinCost = dist;
+                            currentNearestNeighboorFirst = k;
+                            currentNearestNeighboorSecond = UINT32_MAX;
+                        }
+                    }
+                }
+                for (unsigned k = secondIIndex; k < cityCount; k++)
+                {
+                    if (!visitedSecond[k])
+                    {
+                        int dist = cities[i][second.second[k]];
+                        if (dist < currentMinCost)
+                        {
+                            currentMinCost = dist;
+                            currentNearestNeighboorSecond = k;
+                            currentNearestNeighboorFirst = UINT32_MAX;
+                        }
+                    }
+                }
+
+                if (currentMinCost < INT_MAX)
+                {
+                    if (currentNearestNeighboorFirst != UINT32_MAX)
+                    {
+                        //wybraliśmy miasto z pierwszego rodzica
+                        i = first.second[currentNearestNeighboorFirst];
+                        firstIIndex = currentNearestNeighboorFirst;
+                        secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+                    }
+                    else
+                    {
+                        //wybraliśmy miasto z drugiego rodzica
+                        i = second.second[currentNearestNeighboorSecond];
+                        firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+                        secondIIndex = currentNearestNeighboorSecond;
+                    }
+                    visitedFirst[firstIIndex] = true;
+                    visitedSecond[secondIIndex] = true;
+
+
+                    resultValue += cities[result[result.size() - 1]][i];
+                    result.push_back(i);
+                }
+                else
+                {
+                    currentMinCost = INT_MAX;
+                    currentNearestNeighboorFirst = UINT32_MAX;
+                    currentNearestNeighboorSecond = UINT32_MAX;
+
+                    //dodaj najbliższe jeszcze nie odwiedzone miasto
+                    //bardzo podobna procedura, ale k ma szerszy zakres
+                    for (unsigned k = 0; k < cityCount; k++)
+                    {
+                        //claim -- dla sprawdzonych juz wcześniej miast nie bedziemy liczyc i porownywac bo są już odwiedzone
+                        if (!visitedFirst[k])
+                        {
+                            int dist = cities[i][first.second[k]];
+                            if (dist < currentMinCost)
+                            {
+                                currentMinCost = dist;
+                                currentNearestNeighboorFirst = k;
+                                currentNearestNeighboorSecond = UINT32_MAX;
+                            }
+                        }
+                        if (!visitedSecond[k])
+                        {
+                            int dist = cities[i][second.second[k]];
+                            if (dist < currentMinCost)
+                            {
+                                currentMinCost = dist;
+                                currentNearestNeighboorSecond = k;
+                                currentNearestNeighboorFirst = UINT32_MAX;
+                            }
+                        }
+                    }
+
+                    //claim -- znalezlismy nieodwiedzone miasto
+                    if (currentNearestNeighboorFirst != UINT32_MAX)
+                    {
+                        //wybraliśmy miasto z pierwszego rodzica
+                        i = first.second[currentNearestNeighboorFirst];
+                        firstIIndex = currentNearestNeighboorFirst;
+                        secondIIndex = std::find(second.second.begin(), second.second.end(), i) - second.second.begin();
+                    }
+                    else
+                    {
+                        //wybraliśmy miasto z drugiego rodzica
+                        i = second.second[currentNearestNeighboorSecond];
+                        firstIIndex = std::find(first.second.begin(), first.second.end(), i) - first.second.begin();
+                        secondIIndex = currentNearestNeighboorSecond;
+                    }
+
+                    visitedFirst[firstIIndex] = true;
+                    visitedSecond[secondIIndex] = true;
+
+
+                    resultValue += cities[result[result.size() - 1]][i];
+                    result.push_back(i);
+                }
+            }
+
+            resultValue += cities[result[result.size() - 1]][result[0]];
+            
+            // zwroc potomstwo
+            free(visitedFirst);
+            free(visitedSecond);
+            return std::make_pair(resultValue, result);
+        }
+
         std::set<std::pair<int, morph::vVector<unsigned>>> selection(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
         {
             if (proceedToNextCount < population.size())
@@ -1293,13 +1696,6 @@ class MatrixTSPInstance
         {
             // nie trzeba się martwić invertami traktującymi solution cyklicznie - bo problem symetryczny
             solveKRandom(1, seed);
-
-            int currentCost = objectiveFunction();
-
-            if (currentCost == 0)
-            {
-                return;
-            }
 
             bool changes = true;
             unsigned iteration = 0;
@@ -1355,14 +1751,7 @@ class MatrixTSPInstance
         {
             solveKRandom(1, seed);
 
-            // std::cout << "Before inverts: " << objectiveFunction() << std::endl; 
-
-            int currentCost = objectiveFunction();
-
-            if (currentCost == 0)
-            {
-                return;
-            }
+            // std::cout << "Before inverts: " << objectiveFunction() << std::endl;
 
             bool changes = true;
             unsigned iteration = 0;
