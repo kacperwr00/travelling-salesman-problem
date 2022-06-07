@@ -15,14 +15,14 @@ int main()
     startingPopulationsEucl[2] = &EuclideanTSPInstance::startingPopulationThree;
 
     getCrossoverPairsEucl[0] = &EuclideanTSPInstance::crossoverPairs;
-    // crossoverSelectionFunctionsEucl[1] = &EuclideanTSPInstance::crossoverSelectionTwo;
+    getCrossoverPairsEucl[1] = &EuclideanTSPInstance::crossoverPairsTwo;
 
     crossoverFunctionsEucl[0] = &EuclideanTSPInstance::crossover;
     crossoverFunctionsEucl[1] = &EuclideanTSPInstance::crossoverTwo;
     crossoverFunctionsEucl[2] = &EuclideanTSPInstance::crossoverThree;
 
     selectionFunctionsEucl[0] = &EuclideanTSPInstance::selection;
-    // selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
+    selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
 
     mutationsEucl[0] = &EuclideanTSPInstance::mutation;
     mutationsEucl[1] = &EuclideanTSPInstance::mutationTwo;
@@ -80,7 +80,7 @@ int main()
     EuclideanTSPInstance euclInstance;
     euclInstance.randomInstance(123, 70);
     euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[0],
-            mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[0]);
+            mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[1]);
     euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 10, &EuclideanTSPInstance::startingPopulationThree, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutationThree, 
         &EuclideanTSPInstance::crossoverTwo, &EuclideanTSPInstance::selection);
 
@@ -110,14 +110,14 @@ int main()
     startingPopulationsMatrix[2] = &MatrixTSPInstance::startingPopulationThree;
 
     getCrossoverPairsMatrix[0] = &MatrixTSPInstance::crossoverPairs;
-    // crossoverSelectionFunctionsMatrix[1] = &MatrixTSPInstance::crossoverSelectionTwo;
+    getCrossoverPairsMatrix[1] = &MatrixTSPInstance::crossoverPairsTwo;
 
     crossoverFunctionsMatrix[0] = &MatrixTSPInstance::crossover;
     crossoverFunctionsMatrix[1] = &MatrixTSPInstance::crossoverTwo;
     crossoverFunctionsMatrix[2] = &MatrixTSPInstance::crossoverThree;
 
     selectionFunctionsMatrix[0] = &MatrixTSPInstance::selection;
-    // selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
+    selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
 
     mutationsMatrix[0] = &MatrixTSPInstance::mutation;
     mutationsMatrix[1] = &MatrixTSPInstance::mutationTwo;
@@ -132,7 +132,7 @@ int main()
 
     matrixInstance.randomInstance(123, 70, false);
     matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsMatrix[2], getCrossoverPairsMatrix[0],
-            mutationsMatrix[2], crossoverFunctionsMatrix[2], selectionFunctionsMatrix[0]);
+            mutationsMatrix[2], crossoverFunctionsMatrix[2], selectionFunctionsMatrix[1]);
 
     std::cout << "Dla porównania 2-opt: \n";
     matrixInstance.solve2Opt();

@@ -1189,6 +1189,60 @@ class MatrixTSPInstance
             return selectedPairs;
         }
 
+    std::vector<std::pair<unsigned, unsigned>> crossoverPairsTwo(const unsigned populationSize, const unsigned proceedToNextCount,
+                                                              const unsigned eligibleForCrossOverCount, const long objectiveFunctionSum, const int firstNonEligibleObjectiveFunction,
+                                                              std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions)
+    {
+        std::vector<std::pair<unsigned, unsigned>> selectedPairs;
+        //suma tych różnic w pierwszych eligible polach
+        long total = firstNonEligibleObjectiveFunction * eligibleForCrossOverCount - objectiveFunctionSum;
+        // std::cout << "total " << total << std::endl;
+
+        for (unsigned iter = 0; iter < populationSize - proceedToNextCount; iter++)
+        {
+            long chosen = longRand(0, total - 1, geneticSeed);
+            // std::cout << "Chosen wylosowany: " << chosen << std::endl;
+            unsigned first = 0;
+
+            std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
+            for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+            {
+                chosen -= (firstNonEligibleObjectiveFunction - (*it).first);
+                if (chosen <= 0)
+                {
+                    // std::cout << "Chosen <= 0: " << chosen << std::endl;
+                    first = std::distance(sortedObjectiveFunctions.begin(), it);
+                    // std::cout << "Distance: " << std::distance(sortedObjectiveFunctions.begin(), it) << std::endl;
+                    break;
+                }
+                // std::cout << "Chosen " << chosen << std::endl;
+                it++;
+            }
+
+            chosen = longRand(0, total - 1, geneticSeed);
+            // std::cout << "Chosen wylosowany: " << chosen << std::endl;
+
+            it = sortedObjectiveFunctions.begin();
+            for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
+            {
+                chosen -= (firstNonEligibleObjectiveFunction - (*it).first);
+                if (chosen <= 0)
+                {
+                    // std::cout << "Chosen <= 0: " << chosen << std::endl;
+                    selectedPairs.push_back(std::make_pair(first, std::distance(sortedObjectiveFunctions.begin(), it)));
+                    // std::cout << "Distance: " << std::distance(sortedObjectiveFunctions.begin(), it) << std::endl;
+                    break;
+                }
+                it++;
+            }
+        }
+
+        // std::cout << "Selected " << selectedPairs.size() << " pairs." << std::endl;
+        // std::cout << "firstNonEligibleObjectiveFunction " << firstNonEligibleObjectiveFunction << std::endl;
+
+        return selectedPairs;
+    }
+
         std::pair<int, morph::vVector<unsigned>> mutation(const std::pair<int, morph::vVector<unsigned>> inputSolution)
         {
             auto input = inputSolution.second;
