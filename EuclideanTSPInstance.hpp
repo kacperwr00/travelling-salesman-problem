@@ -1268,6 +1268,8 @@ class EuclideanTSPInstance
                     std::advance(first, selectedPair.first);
                     std::advance(second, selectedPair.second);
                     
+
+                    // std::cout << selectedPair.first << " " << selectedPair.second << " " << sortedObjectiveFunctions.size() << std::endl;
                     children.push_back((this->*crossover)(*first, *second));
                 }
 
@@ -1478,8 +1480,8 @@ class EuclideanTSPInstance
 
         for (unsigned iter = 0; iter < populationSize - proceedToNextCount; iter++)
         {
-            long first = longRand(0, populationSize - 1, geneticSeed);
-            long second = longRand(0, populationSize - 1, geneticSeed);
+            long first = longRand(0, sortedObjectiveFunctions.size() - 1, geneticSeed);
+            long second = longRand(0, sortedObjectiveFunctions.size() - 1, geneticSeed);
             selectedPairs.push_back(std::make_pair(first, second));
         }
 
