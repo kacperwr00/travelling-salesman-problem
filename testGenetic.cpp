@@ -158,10 +158,10 @@ int main(int argc, char** argv)
 
         for (int i = (thread - 1) * 25; i < thread * 25; i++)
         {
-            // euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 100, 15, 100, startingPopulationsEucl[variants[i][0]], getCrossoverPairsEucl[variants[i][1]],
-            //     mutationsEucl[variants[i][2]], crossoverFunctionsEucl[variants[i][3]], selectionFunctionsEucl[variants[i][4]]);
-            // std::cout << euclInstance.objectiveFunction() << ",";
-        std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
+            euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 100, 15, 100, startingPopulationsEucl[variants[i][0]], getCrossoverPairsEucl[variants[i][1]],
+                mutationsEucl[variants[i][2]], crossoverFunctionsEucl[variants[i][3]], selectionFunctionsEucl[variants[i][4]]);
+            std::cout << euclInstance.objectiveFunction() << ",";
+        // std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
         }
 
         std::cout << std::endl;
@@ -190,10 +190,10 @@ int main(int argc, char** argv)
 
         for (int i = (thread - 1) * 25; i < thread * 25; i++)
         {
-            // matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 100, 15, 100, startingPopulationsMatrix[variants[i][0]],  getCrossoverPairsMatrix[variants[i][1]],
-            //     mutationsMatrix[variants[i][2]], crossoverFunctionsMatrix[variants[i][3]], selectionFunctionsMatrix[variants[i][4]]);
-            // std::cout << matrixInstance.objectiveFunction() << ",";
-            std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
+            matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 100, 15, 100, startingPopulationsMatrix[variants[i][0]],  getCrossoverPairsMatrix[variants[i][1]],
+                mutationsMatrix[variants[i][2]], crossoverFunctionsMatrix[variants[i][3]], selectionFunctionsMatrix[variants[i][4]]);
+            std::cout << matrixInstance.objectiveFunction() << ",";
+            // std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
         }
 
         std::cout << std::endl;
