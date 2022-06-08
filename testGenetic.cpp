@@ -70,149 +70,149 @@ int main(int argc, char** argv)
         std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
     }
 
-    {
+    // {
         // std::cout << "EUCL" << std::endl;
-        EuclideanTSPInstance euclInstance;
+    //     EuclideanTSPInstance euclInstance;
     
-    // EuclideanTSPInstance::getStartingPopulation startingPopulationsEucl[3];
-    // EuclideanTSPInstance::getCrossoverPairs getCrossoverPairsEucl[2];
-    // EuclideanTSPInstance::crossoverFunction crossoverFunctionsEucl[3];
-    // EuclideanTSPInstance::selectionFunction selectionFunctionsEucl[2];
-    // EuclideanTSPInstance::mutationFunction mutationsEucl[3];
+    // // EuclideanTSPInstance::getStartingPopulation startingPopulationsEucl[3];
+    // // EuclideanTSPInstance::getCrossoverPairs getCrossoverPairsEucl[2];
+    // // EuclideanTSPInstance::crossoverFunction crossoverFunctionsEucl[3];
+    // // EuclideanTSPInstance::selectionFunction selectionFunctionsEucl[2];
+    // // EuclideanTSPInstance::mutationFunction mutationsEucl[3];
     
-    // startingPopulationsEucl[0] = &EuclideanTSPInstance::startingPopulation;
-    // startingPopulationsEucl[1] = &EuclideanTSPInstance::startingPopulationTwo;
-    // startingPopulationsEucl[2] = &EuclideanTSPInstance::startingPopulationThree;
+    // // startingPopulationsEucl[0] = &EuclideanTSPInstance::startingPopulation;
+    // // startingPopulationsEucl[1] = &EuclideanTSPInstance::startingPopulationTwo;
+    // // startingPopulationsEucl[2] = &EuclideanTSPInstance::startingPopulationThree;
 
-    // getCrossoverPairsEucl[0] = &EuclideanTSPInstance::crossoverPairs;
-    // getCrossoverPairsEucl[1] = &EuclideanTSPInstance::crossoverPairsTwo;
+    // // getCrossoverPairsEucl[0] = &EuclideanTSPInstance::crossoverPairs;
+    // // getCrossoverPairsEucl[1] = &EuclideanTSPInstance::crossoverPairsTwo;
 
-    // crossoverFunctionsEucl[0] = &EuclideanTSPInstance::crossover;
-    // crossoverFunctionsEucl[1] = &EuclideanTSPInstance::crossoverTwo;
-    // crossoverFunctionsEucl[2] = &EuclideanTSPInstance::crossoverThree;
+    // // crossoverFunctionsEucl[0] = &EuclideanTSPInstance::crossover;
+    // // crossoverFunctionsEucl[1] = &EuclideanTSPInstance::crossoverTwo;
+    // // crossoverFunctionsEucl[2] = &EuclideanTSPInstance::crossoverThree;
 
-    // selectionFunctionsEucl[0] = &EuclideanTSPInstance::selection;
-    // selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
+    // // selectionFunctionsEucl[0] = &EuclideanTSPInstance::selection;
+    // // selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
 
-    // mutationsEucl[0] = &EuclideanTSPInstance::mutation;
-    // mutationsEucl[1] = &EuclideanTSPInstance::mutationTwo;
-    // mutationsEucl[2] = &EuclideanTSPInstance::mutationThree;
-        // euclInstance.randomInstance(123, 70);
-        // euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[0],
-        //         mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[0]);
+    // // mutationsEucl[0] = &EuclideanTSPInstance::mutation;
+    // // mutationsEucl[1] = &EuclideanTSPInstance::mutationTwo;
+    // // mutationsEucl[2] = &EuclideanTSPInstance::mutationThree;
+    //     // euclInstance.randomInstance(123, 70);
+    //     // euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[0],
+    //     //         mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[0]);
 
-        // std::cout << "Dla porównania 2-opt: \n";
-        // euclInstance.solve2Opt(false);
-        // std::cout << euclInstance.objectiveFunction() << std::endl;
+    //     // std::cout << "Dla porównania 2-opt: \n";
+    //     // euclInstance.solve2Opt(false);
+    //     // std::cout << euclInstance.objectiveFunction() << std::endl;
 
-        // std::cout << "Dla porównania Krandom(cityCount): \n";
-        // euclInstance.solveKRandom(euclInstance.getCityCount(), 123, false);
-        // std::cout << euclInstance.objectiveFunction() << std::endl;
-
-
-        // std::cout << "MATRIX" << std::endl;
-
-        //LOSOWE PRÓBKOWANIE
+    //     // std::cout << "Dla porównania Krandom(cityCount): \n";
+    //     // euclInstance.solveKRandom(euclInstance.getCityCount(), 123, false);
+    //     // std::cout << euclInstance.objectiveFunction() << std::endl;
 
 
-        for (int i = 0; i < instanceCountOfEachType; i++) 
-        {
-            switch(i)
-            {
-                case 0:
-                    euclInstance.loadTSPLIB("../../ALL_tsp/a280.tsp");
-                    break;
-                case 1:
-                    euclInstance.loadTSPLIB("../../ALL_tsp/berlin52.tsp");
-                    break;
-                case 2:
-                    euclInstance.loadTSPLIB("../../ALL_tsp/bier127.tsp");
-                    break;
-                default:    
-                    euclInstance.randomInstance(seed, (i - 2) * baseCityCount);
-                    break;
-            }
+    //     // std::cout << "MATRIX" << std::endl;
 
-            EuclideanTSPInstance::getStartingPopulation startingPopulationsEucl;
-            EuclideanTSPInstance::getCrossoverPairs getCrossoverPairsEucl;
-            EuclideanTSPInstance::crossoverFunction crossoverFunctionsEucl;
-            EuclideanTSPInstance::selectionFunction selectionFunctionsEucl;
-            EuclideanTSPInstance::mutationFunction mutationsEucl;
+    //     //LOSOWE PRÓBKOWANIE
 
-            for (int i = (thread - 1) * 25; i < thread * 25; i++)
-            {
-                if (variants[i][0] == 0)
-                {
-                    startingPopulationsEucl = &EuclideanTSPInstance::startingPopulation;
-                }
-                else if (variants[i][0] == 1)
-                {
-                    startingPopulationsEucl = &EuclideanTSPInstance::startingPopulationTwo;
-                }
-                else //if (variants[i][0] == 2)
-                {
-                    startingPopulationsEucl = &EuclideanTSPInstance::startingPopulationThree;
-                }
 
-                if (variants[i][1] == 0)
-                {
-                    getCrossoverPairsEucl = &EuclideanTSPInstance::crossoverPairs;
-                }
-                else //if (variants[i][1] == 1)
-                {
-                    getCrossoverPairsEucl = &EuclideanTSPInstance::crossoverPairsTwo;
-                }
+    //     for (int i = 0; i < instanceCountOfEachType; i++) 
+    //     {
+    //         switch(i)
+    //         {
+    //             case 0:
+    //                 euclInstance.loadTSPLIB("../../ALL_tsp/a280.tsp");
+    //                 break;
+    //             case 1:
+    //                 euclInstance.loadTSPLIB("../../ALL_tsp/berlin52.tsp");
+    //                 break;
+    //             case 2:
+    //                 euclInstance.loadTSPLIB("../../ALL_tsp/bier127.tsp");
+    //                 break;
+    //             default:    
+    //                 euclInstance.randomInstance(seed, (i - 2) * baseCityCount);
+    //                 break;
+    //         }
+
+    //         EuclideanTSPInstance::getStartingPopulation startingPopulationsEucl;
+    //         EuclideanTSPInstance::getCrossoverPairs getCrossoverPairsEucl;
+    //         EuclideanTSPInstance::crossoverFunction crossoverFunctionsEucl;
+    //         EuclideanTSPInstance::selectionFunction selectionFunctionsEucl;
+    //         EuclideanTSPInstance::mutationFunction mutationsEucl;
+
+    //         for (int i = (thread - 1) * 25; i < thread * 25; i++)
+    //         {
+    //             if (variants[i][0] == 0)
+    //             {
+    //                 startingPopulationsEucl = &EuclideanTSPInstance::startingPopulation;
+    //             }
+    //             else if (variants[i][0] == 1)
+    //             {
+    //                 startingPopulationsEucl = &EuclideanTSPInstance::startingPopulationTwo;
+    //             }
+    //             else //if (variants[i][0] == 2)
+    //             {
+    //                 startingPopulationsEucl = &EuclideanTSPInstance::startingPopulationThree;
+    //             }
+
+    //             if (variants[i][1] == 0)
+    //             {
+    //                 getCrossoverPairsEucl = &EuclideanTSPInstance::crossoverPairs;
+    //             }
+    //             else //if (variants[i][1] == 1)
+    //             {
+    //                 getCrossoverPairsEucl = &EuclideanTSPInstance::crossoverPairsTwo;
+    //             }
                 
-                if (variants[i][2] == 0)
-                {
-                    mutationsEucl = &EuclideanTSPInstance::mutation;
-                }
-                else if (variants[i][2] == 1)
-                {
-                    mutationsEucl = &EuclideanTSPInstance::mutationTwo;
-                }
-                else //if (variants[i][2] == 2)
-                {
-                    mutationsEucl = &EuclideanTSPInstance::mutationThree;
-                }
+    //             if (variants[i][2] == 0)
+    //             {
+    //                 mutationsEucl = &EuclideanTSPInstance::mutation;
+    //             }
+    //             else if (variants[i][2] == 1)
+    //             {
+    //                 mutationsEucl = &EuclideanTSPInstance::mutationTwo;
+    //             }
+    //             else //if (variants[i][2] == 2)
+    //             {
+    //                 mutationsEucl = &EuclideanTSPInstance::mutationThree;
+    //             }
 
-                if (variants[i][3] == 0)
-                {
-                    crossoverFunctionsEucl = &EuclideanTSPInstance::crossover;
-                }
-                else if (variants[i][3] == 1)
-                {
-                    crossoverFunctionsEucl = &EuclideanTSPInstance::crossoverTwo;
-                }
-                else //if (variants[i][3] == 2)
-                {
-                    crossoverFunctionsEucl = &EuclideanTSPInstance::crossoverThree;
-                }
+    //             if (variants[i][3] == 0)
+    //             {
+    //                 crossoverFunctionsEucl = &EuclideanTSPInstance::crossover;
+    //             }
+    //             else if (variants[i][3] == 1)
+    //             {
+    //                 crossoverFunctionsEucl = &EuclideanTSPInstance::crossoverTwo;
+    //             }
+    //             else //if (variants[i][3] == 2)
+    //             {
+    //                 crossoverFunctionsEucl = &EuclideanTSPInstance::crossoverThree;
+    //             }
 
-                if (variants[i][4] == 0)
-                {
-                    selectionFunctionsEucl = &EuclideanTSPInstance::selection;
-                }
-                else //if (variants[i][4] == 1)
-                {
-                    selectionFunctionsEucl = &EuclideanTSPInstance::selectionTwo;
-                }
+    //             if (variants[i][4] == 0)
+    //             {
+    //                 selectionFunctionsEucl = &EuclideanTSPInstance::selection;
+    //             }
+    //             else //if (variants[i][4] == 1)
+    //             {
+    //                 selectionFunctionsEucl = &EuclideanTSPInstance::selectionTwo;
+    //             }
 
-                // euclInstance.solveGenetic(CLOCKS_PER_SEC * 10, 123, true, 100, 15, 100, startingPopulationsEucl[variants[i][0]], getCrossoverPairsEucl[variants[i][1]],
-                //     mutationsEucl[variants[i][2]], crossoverFunctionsEucl[variants[i][3]], selectionFunctionsEucl[variants[i][4]]);
-                // euclInstance.solveGenetic(CLOCKS_PER_SEC * 10, 123, true, 100, 15, 100, &EuclideanTSPInstance::startingPopulationTwo, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutationThree,
-                //     &EuclideanTSPInstance::crossover, &EuclideanTSPInstance::selection);
-                euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 40, 15, 40, startingPopulationsEucl, getCrossoverPairsEucl,
-                    mutationsEucl, crossoverFunctionsEucl, selectionFunctionsEucl);
+    //             // euclInstance.solveGenetic(CLOCKS_PER_SEC * 10, 123, true, 100, 15, 100, startingPopulationsEucl[variants[i][0]], getCrossoverPairsEucl[variants[i][1]],
+    //             //     mutationsEucl[variants[i][2]], crossoverFunctionsEucl[variants[i][3]], selectionFunctionsEucl[variants[i][4]]);
+    //             // euclInstance.solveGenetic(CLOCKS_PER_SEC * 10, 123, true, 100, 15, 100, &EuclideanTSPInstance::startingPopulationTwo, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutationThree,
+    //             //     &EuclideanTSPInstance::crossover, &EuclideanTSPInstance::selection);
+    //             euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, false, 40, 15, 40, startingPopulationsEucl, getCrossoverPairsEucl,
+    //                 mutationsEucl, crossoverFunctionsEucl, selectionFunctionsEucl);
                 
-                std::cout << euclInstance.objectiveFunction() << ",";
-                // std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
-            }
+    //             std::cout << euclInstance.objectiveFunction() << ",";
+    //             // std::cout << variants[i][0] << "," << variants[i][1] << "," << variants[i][2] << "," << variants[i][3] << "," << variants[i][4] << std::endl;
+    //         }
 
-            std::cout << std::endl;
-            euclInstance.deleteInstance();
-        }
-    }
+    //         std::cout << std::endl;
+    //         euclInstance.deleteInstance();
+    //     }
+    // }
 
     MatrixTSPInstance matrixInstance;
     // std::vector<morph::vVector<unsigned>> (MatrixTSPInstance::*startingPopulationsMatrix[3])(unsigned);
