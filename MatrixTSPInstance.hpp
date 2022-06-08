@@ -49,14 +49,15 @@ class MatrixTSPInstance
 
         //genetic utility functions
         //TODO arguments
+        
+
+    public:
         typedef std::vector<morph::vVector<unsigned>> (MatrixTSPInstance::*getStartingPopulation)(unsigned);
         typedef std::vector<std::pair<unsigned, unsigned>> (MatrixTSPInstance::*getCrossoverPairs)(const unsigned, const unsigned, const unsigned, const long, const int, std::set<std::pair<int, morph::vVector<unsigned>>>);
         typedef std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*mutationFunction)(const std::pair<int, morph::vVector<unsigned>>);
         typedef std::pair<int, morph::vVector<unsigned>> (MatrixTSPInstance::*crossoverFunction)(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
         typedef std::set<std::pair<int, morph::vVector<unsigned>>> (MatrixTSPInstance::*selectionFunction)(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
 
-
-    public:
         // ALGORYTMY HEURYSTYCZNE:
         // k-random - losujemy k rozwiązań i bierzemy najlepsze
 
@@ -1100,7 +1101,7 @@ class MatrixTSPInstance
             return result;
         }
 
-        //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 1
+        //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 4
         //otrzymana populacja powinna być bardziej zróżnicowana w pierwszej metodzie
         std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
         {
@@ -1108,7 +1109,7 @@ class MatrixTSPInstance
 
             for (long unsigned i = 0; i < populationSize; i++)
             {
-                solveKRandom(((i + 1) * cityCount) >> 1, geneticSeed + i);
+                solveKRandom(((i + 1) * cityCount) >> 4, geneticSeed + i);
                 result.push_back(solution);
             }
 
@@ -1401,10 +1402,10 @@ class MatrixTSPInstance
                 int currentMinCost = INT_MAX;
                 unsigned currentNearestNeighboorFirst = UINT32_MAX, currentNearestNeighboorSecond = UINT32_MAX;
                 
-                unsigned firstPrev = POS_MOD(firstIIndex - 1, cityCount);
-                unsigned firstSucc = POS_MOD(firstIIndex + 1, cityCount);
-                unsigned secondPrev = POS_MOD(secondIIndex - 1, cityCount);
-                unsigned secondSucc = POS_MOD(secondIIndex + 1, cityCount);
+                long firstPrev = POS_MOD((long)firstIIndex - 1, cityCount);
+                long firstSucc = POS_MOD((long)firstIIndex + 1, cityCount);
+                long secondPrev = POS_MOD((long)secondIIndex - 1, cityCount);
+                long secondSucc = POS_MOD((long)secondIIndex + 1, cityCount);
 
                 if (!visitedFirst[firstPrev])
                 {

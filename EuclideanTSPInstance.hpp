@@ -45,13 +45,15 @@ class EuclideanTSPInstance
 
         //genetic utility functions
         //TODO arguments
+
+    public:
         typedef std::vector<morph::vVector<unsigned>> (EuclideanTSPInstance::*getStartingPopulation)(unsigned);
         typedef std::vector<std::pair<unsigned, unsigned>> (EuclideanTSPInstance::*getCrossoverPairs)(const unsigned, const unsigned, const unsigned, const long, const int, std::set<std::pair<int, morph::vVector<unsigned>>>);
         typedef std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*mutationFunction)(const std::pair<int, morph::vVector<unsigned>>);
         typedef std::pair<int, morph::vVector<unsigned>> (EuclideanTSPInstance::*crossoverFunction)(std::pair<int, morph::vVector<unsigned>>, std::pair<int, morph::vVector<unsigned>>);
         typedef std::set<std::pair<int, morph::vVector<unsigned>>> (EuclideanTSPInstance::*selectionFunction)(std::set<std::pair<int, morph::vVector<unsigned>>>, unsigned);
 
-    public:
+
         unsigned getCityCount()
         {
             return cityCount;
@@ -1211,7 +1213,7 @@ class EuclideanTSPInstance
                 if (verbose)
                 {
                     iterationCounter++;
-                    // std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
+                    std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
                 }
 
                 //KRZYŻOWANIE
@@ -1223,6 +1225,7 @@ class EuclideanTSPInstance
                 // std::cout << "Total w main: " << firstNonEligibleObjectiveFunction * eligibleForCrossOverCount - objectiveFunctionSum << std::endl;
                 std::vector<std::pair<unsigned, unsigned>> selectedPairs = (this->*getPairs)(populationSize, proceedToNextCount, 
                     MIN(eligibleForCrossOverCount, sortedObjectiveFunctions.size()), objectiveFunctionSum, firstNonEligibleObjectiveFunction, sortedObjectiveFunctions);
+                    // std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
 
             // std::vector<std::pair<unsigned, unsigned>> selectedPairs;
 
@@ -1272,9 +1275,11 @@ class EuclideanTSPInstance
                     // std::cout << selectedPair.first << " " << selectedPair.second << " " << sortedObjectiveFunctions.size() << std::endl;
                     children.push_back((this->*crossover)(*first, *second));
                 }
+                    // std::cout << " Iteration " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
 
                 //uśmiercamy za słabe osobniki
                 sortedObjectiveFunctions = (this->*naturalSelection)(sortedObjectiveFunctions, proceedToNextCount);
+                    // std::cout << " Iterationaa " << iterationCounter << " best solution: " << (*(sortedObjectiveFunctions.begin())).first << std::endl;
 
                 //dodajemy dzieci do populacji       
                 for (auto child: children)
@@ -1327,14 +1332,14 @@ class EuclideanTSPInstance
             return result;
         }
 
-        //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 1
+        //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 4
         std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
         {
             std::vector<morph::vVector<unsigned>> result;
 
             for (long unsigned i = 0; i < populationSize; i++)
             {
-                solveKRandom(((i + 1) * cityCount) >> 1, geneticSeed + i, false);
+                solveKRandom(((i + 1) * cityCount) >> 4, geneticSeed + i, false);
                 result.push_back(solution);
             }
 
@@ -1418,7 +1423,7 @@ class EuclideanTSPInstance
             }
         }
 
-        std::vector<std::pair<unsigned, unsigned>> crossoverPairs(const unsigned populationSize, const unsigned proceedToNextCount, 
+        std::vector<std::pair<unsigned, unsigned>> crossoverPairsTwo(const unsigned populationSize, const unsigned proceedToNextCount, 
             const unsigned eligibleForCrossOverCount, const long objectiveFunctionSum, const int firstNonEligibleObjectiveFunction, 
             std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions)
         {
@@ -1460,7 +1465,17 @@ class EuclideanTSPInstance
                         // std::cout << "Chosen <= 0: " << chosen << std::endl;
                         selectedPairs.push_back(std::make_pair(first, std::distance(sortedObjectiveFunctions.begin(), it)));
                         // std::cout << "Distance: " << std::distance(sortedObjectiveFunctions.begin(), it) << std::endl;
-                        break;
+                        
+                                // if (selectedPairs[selectedPairs.size() - 1].second >= sortedObjectiveFunctions.size())
+                                // {
+                                //     std::cout << "Oh no !" << selectedPairs[selectedPairs.size() - 1].second << " > " << sortedObjectiveFunctions.size() << std::endl;
+                                // }
+                                // if (selectedPairs[selectedPairs.size() - 1].first >= sortedObjectiveFunctions.size())
+                                // {
+                                //     std::cout << "Oh no !" << selectedPairs[selectedPairs.size() - 1].first << " > " << sortedObjectiveFunctions.size() << std::endl;
+                                // }
+
+                        break;                
                     }
                     it++;
                 }
@@ -1472,7 +1487,7 @@ class EuclideanTSPInstance
             return selectedPairs;
         }
 
-    std::vector<std::pair<unsigned, unsigned>> crossoverPairsTwo(const unsigned populationSize, const unsigned proceedToNextCount,
+    std::vector<std::pair<unsigned, unsigned>> crossoverPairs(const unsigned populationSize, const unsigned proceedToNextCount,
                                                               const unsigned eligibleForCrossOverCount, const long objectiveFunctionSum, const int firstNonEligibleObjectiveFunction,
                                                               std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions)
     {
@@ -1487,6 +1502,16 @@ class EuclideanTSPInstance
 
         // std::cout << "Selected " << selectedPairs.size() << " pairs." << std::endl;
         // std::cout << "firstNonEligibleObjectiveFunction " << firstNonEligibleObjectiveFunction << std::endl;
+
+        // if (selectedPairs[selectedPairs.size() - 1].second >= sortedObjectiveFunctions.size())
+        //                         {
+        //                             std::cout << "Oh no !" << selectedPairs[selectedPairs.size() - 1].second << " > " << sortedObjectiveFunctions.size() << std::endl;
+        //                         }
+        //                         if (selectedPairs[selectedPairs.size() - 1].first >= sortedObjectiveFunctions.size())
+        //                         {
+        //                             std::cout << "Oh no !" << selectedPairs[selectedPairs.size() - 1].first << " > " << sortedObjectiveFunctions.size() << std::endl;
+        //                         }
+
 
         return selectedPairs;
     }
@@ -1683,10 +1708,10 @@ class EuclideanTSPInstance
                 int currentMinCost = INT_MAX;
                 unsigned currentNearestNeighboorFirst = UINT32_MAX, currentNearestNeighboorSecond = UINT32_MAX;
                 
-                unsigned firstPrev = POS_MOD(firstIIndex - 1, cityCount);
-                unsigned firstSucc = POS_MOD(firstIIndex + 1, cityCount);
-                unsigned secondPrev = POS_MOD(secondIIndex - 1, cityCount);
-                unsigned secondSucc = POS_MOD(secondIIndex + 1, cityCount);
+                long firstPrev = POS_MOD((long)firstIIndex - 1, cityCount);
+                long firstSucc = POS_MOD((long)firstIIndex + 1, cityCount);
+                long secondPrev = POS_MOD((long)secondIIndex - 1, cityCount);
+                long secondSucc = POS_MOD((long)secondIIndex + 1, cityCount);
 
                 if (!visitedFirst[firstPrev])
                 {
@@ -1964,6 +1989,7 @@ class EuclideanTSPInstance
 
         std::set<std::pair<int, morph::vVector<unsigned>>> selection(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
         {
+            // std::cout << " Iteration " << population.size() << std::endl;
             if (proceedToNextCount < population.size())
             {        
                 auto it = population.begin();
