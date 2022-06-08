@@ -1101,6 +1101,7 @@ class MatrixTSPInstance
         }
 
         //i-ty osobnik generowany jest za pomocą k-random z k równym ((i + 1) * cityCount) >> 1
+        //otrzymana populacja powinna być bardziej zróżnicowana w pierwszej metodzie
         std::vector<morph::vVector<unsigned>> startingPopulationTwo(unsigned populationSize)
         {
             std::vector<morph::vVector<unsigned>> result;
@@ -2691,13 +2692,15 @@ class MatrixTSPInstance
             if (cities)
             {
                 // cities = (int**)malloc(sizeof(*cities) * cityCount);
-                // for (unsigned i = cityCount; i > 0; i--)
+                for (int i = cityCount - 1; i >= 0; i--)
+                {
+                    if (cities[i])
+                        free(cities[i]);
+                }
+                // auto tmp = cities;
+                // while (*tmp) 
                 // {
-                //     delete[](cities[i]);
-                // }
-                // while (*cities) 
-                // {
-                //     auto city = *cities++;
+                //     auto city = *tmp++;
                 //     free(city);
                 // }
                 free(cities);
