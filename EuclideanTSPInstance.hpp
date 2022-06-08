@@ -1470,6 +1470,25 @@ class EuclideanTSPInstance
             return selectedPairs;
         }
 
+    std::vector<std::pair<unsigned, unsigned>> crossoverPairsTwo(const unsigned populationSize, const unsigned proceedToNextCount,
+                                                              const unsigned eligibleForCrossOverCount, const long objectiveFunctionSum, const int firstNonEligibleObjectiveFunction,
+                                                              std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions)
+    {
+        std::vector<std::pair<unsigned, unsigned>> selectedPairs;
+
+        for (unsigned iter = 0; iter < populationSize - proceedToNextCount; iter++)
+        {
+            long first = longRand(0, populationSize - 1, geneticSeed);
+            long second = longRand(0, populationSize - 1, geneticSeed);
+            selectedPairs.push_back(std::make_pair(first, second));
+        }
+
+        // std::cout << "Selected " << selectedPairs.size() << " pairs." << std::endl;
+        // std::cout << "firstNonEligibleObjectiveFunction " << firstNonEligibleObjectiveFunction << std::endl;
+
+        return selectedPairs;
+    }
+
         std::pair<int, morph::vVector<unsigned>> mutation(const std::pair<int, morph::vVector<unsigned>> inputSolution)
         {
             auto input = inputSolution.second;
@@ -1956,6 +1975,32 @@ class EuclideanTSPInstance
 
             return population;
         }
+
+    std::set<std::pair<int, morph::vVector<unsigned>>> selectionTwo(std::set<std::pair<int, morph::vVector<unsigned>>> population, unsigned proceedToNextCount)
+    {
+        std::set<std::pair<int, morph::vVector<unsigned>>> newPopulation;
+        if(proceedToNextCount < population.size())
+        {
+            unsigned groupSize = population.size()/proceedToNextCount;
+
+            auto it = population.begin();
+
+            unsigned i = 0;
+            do
+            {
+                unsigned randomInGroup = longRand(0, groupSize, geneticSeed);
+                std::advance(it, randomInGroup);
+                newPopulation.insert(*it);
+                if(i < population.size()-groupSize){
+                    std::advance(it, groupSize-randomInGroup);
+                    i+=groupSize;
+                }
+            }
+            while(i < population.size()-groupSize);
+
+        }
+        return newPopulation;
+    }
 
 
         /**

@@ -27,14 +27,14 @@ int main(int argc, char** argv)
     startingPopulationsEucl[2] = &EuclideanTSPInstance::startingPopulationThree;
 
     getCrossoverPairsEucl[0] = &EuclideanTSPInstance::crossoverPairs;
-    // getCrossoverPairsEucl[1] = &EuclideanTSPInstance::crossoverPairsTwo;
+    getCrossoverPairsEucl[1] = &EuclideanTSPInstance::crossoverPairsTwo;
 
     crossoverFunctionsEucl[0] = &EuclideanTSPInstance::crossover;
     crossoverFunctionsEucl[1] = &EuclideanTSPInstance::crossoverTwo;
     crossoverFunctionsEucl[2] = &EuclideanTSPInstance::crossoverThree;
 
     selectionFunctionsEucl[0] = &EuclideanTSPInstance::selection;
-    // selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
+    selectionFunctionsEucl[1] = &EuclideanTSPInstance::selectionTwo;
 
     mutationsEucl[0] = &EuclideanTSPInstance::mutation;
     mutationsEucl[1] = &EuclideanTSPInstance::mutationTwo;
@@ -121,14 +121,14 @@ int main(int argc, char** argv)
     startingPopulationsMatrix[2] = &MatrixTSPInstance::startingPopulationThree;
 
     getCrossoverPairsMatrix[0] = &MatrixTSPInstance::crossoverPairs;
-    // getCrossoverPairsMatrix[1] = &MatrixTSPInstance::crossoverPairsTwo;
+    getCrossoverPairsMatrix[1] = &MatrixTSPInstance::crossoverPairsTwo;
 
     crossoverFunctionsMatrix[0] = &MatrixTSPInstance::crossover;
     crossoverFunctionsMatrix[1] = &MatrixTSPInstance::crossoverTwo;
     crossoverFunctionsMatrix[2] = &MatrixTSPInstance::crossoverThree;
 
     selectionFunctionsMatrix[0] = &MatrixTSPInstance::selection;
-    // selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
+    selectionFunctionsMatrix[1] = &MatrixTSPInstance::selectionTwo;
 
     mutationsMatrix[0] = &MatrixTSPInstance::mutation;
     mutationsMatrix[1] = &MatrixTSPInstance::mutationTwo;
