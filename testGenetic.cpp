@@ -79,7 +79,7 @@ int main()
     std::cout << "EUCL" << std::endl;
     EuclideanTSPInstance euclInstance;
     euclInstance.randomInstance(123, 70);
-    euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[0],
+    euclInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsEucl[2], getCrossoverPairsEucl[1],
             mutationsEucl[2], crossoverFunctionsEucl[2], selectionFunctionsEucl[1]);
     euclInstance.solveGenetic(CLOCKS_PER_SEC * 30, 123, true, 10, 3, 10, &EuclideanTSPInstance::startingPopulationThree, &EuclideanTSPInstance::crossoverPairs, &EuclideanTSPInstance::mutationThree, 
         &EuclideanTSPInstance::crossoverTwo, &EuclideanTSPInstance::selection);
@@ -131,7 +131,7 @@ int main()
     // }
 
     matrixInstance.randomInstance(123, 70, false);
-    matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsMatrix[2], getCrossoverPairsMatrix[0],
+    matrixInstance.solveGenetic(CLOCKS_PER_SEC * 60, 123, true, 100, 15, 100, startingPopulationsMatrix[2], getCrossoverPairsMatrix[1],
             mutationsMatrix[2], crossoverFunctionsMatrix[2], selectionFunctionsMatrix[1]);
 
     std::cout << "Dla porównania 2-opt: \n";

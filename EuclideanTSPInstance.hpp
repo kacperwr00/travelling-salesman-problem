@@ -1475,47 +1475,12 @@ class EuclideanTSPInstance
                                                               std::set<std::pair<int, morph::vVector<unsigned>> > sortedObjectiveFunctions)
     {
         std::vector<std::pair<unsigned, unsigned>> selectedPairs;
-        //suma tych różnic w pierwszych eligible polach
-        long total = firstNonEligibleObjectiveFunction * eligibleForCrossOverCount - objectiveFunctionSum;
-        // std::cout << "total " << total << std::endl;
 
         for (unsigned iter = 0; iter < populationSize - proceedToNextCount; iter++)
         {
-            long chosen = longRand(0, total - 1, geneticSeed);
-            // std::cout << "Chosen wylosowany: " << chosen << std::endl;
-            unsigned first = 0;
-
-            std::set<std::pair<int, morph::vVector<unsigned>> >::iterator it(sortedObjectiveFunctions.begin());
-            for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
-            {
-                chosen -= (firstNonEligibleObjectiveFunction - (*it).first);
-                if (chosen <= 0)
-                {
-                    // std::cout << "Chosen <= 0: " << chosen << std::endl;
-                    first = std::distance(sortedObjectiveFunctions.begin(), it);
-                    // std::cout << "Distance: " << std::distance(sortedObjectiveFunctions.begin(), it) << std::endl;
-                    break;
-                }
-                // std::cout << "Chosen " << chosen << std::endl;
-                it++;
-            }
-
-            chosen = longRand(0, total - 1, geneticSeed);
-            // std::cout << "Chosen wylosowany: " << chosen << std::endl;
-
-            it = sortedObjectiveFunctions.begin();
-            for (unsigned i = 0; i < eligibleForCrossOverCount; i++)
-            {
-                chosen -= (firstNonEligibleObjectiveFunction - (*it).first);
-                if (chosen <= 0)
-                {
-                    // std::cout << "Chosen <= 0: " << chosen << std::endl;
-                    selectedPairs.push_back(std::make_pair(first, std::distance(sortedObjectiveFunctions.begin(), it)));
-                    // std::cout << "Distance: " << std::distance(sortedObjectiveFunctions.begin(), it) << std::endl;
-                    break;
-                }
-                it++;
-            }
+            long first = longRand(0, populationSize - 1, geneticSeed);
+            long second = longRand(0, populationSize - 1, geneticSeed);
+            selectedPairs.push_back(std::make_pair(first, second));
         }
 
         // std::cout << "Selected " << selectedPairs.size() << " pairs." << std::endl;
